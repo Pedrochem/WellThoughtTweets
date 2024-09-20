@@ -56,7 +56,7 @@ async function rankTweetsWithGemini(tweets) {
   const requestBody = {
     contents: [{
       parts: [{
-        text: `You are a professional tweet rater with great philsophical perspectives. You should rank tweets on a scale of 1-10 based on how well thought out they are. You should value creativity, uniqueness, consciousness, and mostly thoughtfulness over pure engagement metrics. Tweets that share an unique view or perspective should be given a higher rating. Respond with only the numeric ratings, separated by commas.\n\n${tweets.map((tweet, index) => `Tweet ${index + 1}: "${tweet.text}"`).join('\n\n')}`
+        text: `You are a professional tweet rater with great philsophical perspectives. You should rank tweets on a scale of 1-10 based on how well thought out they are. You should value creativity, uniqueness, reflectiveness, consciousness, and mostly thoughtfulness over pure engagement metrics. Respond with only the numeric ratings, separated by commas.\n\n${tweets.map((tweet, index) => `Tweet ${index + 1}: "${tweet.text}"`).join('\n\n')}`
       }]
     }]
   };

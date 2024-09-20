@@ -98,7 +98,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Run processTweets immediately and then every 5 seconds
 processTweets();
-setInterval(processTweets, 5000);
+setInterval(processTweets, 2000);
 
 // Modify the MutationObserver to only process new, unranked main tweets
 const observer = new MutationObserver((mutations) => {

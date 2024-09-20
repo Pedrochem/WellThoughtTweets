@@ -40,22 +40,22 @@ function addRankingToTweet(tweetElement, ranking) {
     actionBar.insertBefore(rankContainer, actionBar.firstChild);
 }
 
-async function processTweet(tweet) {
-    if (!tweet.hasAttribute('data-ranked')) {
-      const tweetText = tweet.querySelector('div[data-testid="tweetText"]')?.textContent;
-      if (tweetText) {
-        let ranking;
-        try {
-          ranking = await getRanking(tweetText);
-        } catch (error) {
-          console.error('Error getting ranking:', error);
-          ranking = -1;
-        }
-        addRankingToTweet(tweet, ranking);
-        tweet.setAttribute('data-ranked', 'true');
-      }
-    }
-}
+// async function processTweet(tweet) {
+//     if (!tweet.hasAttribute('data-ranked')) {
+//       const tweetText = tweet.querySelector('div[data-testid="tweetText"]')?.textContent;
+//       if (tweetText) {
+//         let ranking;
+//         try {
+//           ranking = await getRanking(tweetText);
+//         } catch (error) {
+//           console.error('Error getting ranking:', error);
+//           ranking = -1;
+//         }
+//         addRankingToTweet(tweet, ranking);
+//         tweet.setAttribute('data-ranked', 'true');
+//       }
+//     }
+// }
 
 async function getRanking(tweetText) {
     return new Promise((resolve, reject) => {
@@ -69,10 +69,11 @@ async function getRanking(tweetText) {
     });
 }
 
-async function processTweets() {
-    // Use a more specific selector to target only main tweets (posts)
-    const tweets = document.querySelectorAll('article[data-testid="tweet"]:not([data-ranked]):not([data-testid*="reply"])');
+function processTweets() {
+    // Only select tweets that haven't been ranked or are not pending
+    const tweets = document.querySelectorAll('article[data-testid="tweet"]:not([data-ranked]):not([data-ranked="pending"]):not([data-testid*="reply"])');
     const tweetsToRank = [];
+    console.log('Tweets selected for ranking:', tweets);
 
     tweets.forEach(tweet => {
         const tweetText = tweet.querySelector('div[data-testid="tweetText"]')?.textContent;
@@ -83,6 +84,7 @@ async function processTweets() {
     });
 
     if (tweetsToRank.length > 0) {
+        console.log('Hey');
         chrome.runtime.sendMessage({ action: 'rankTweets', tweets: tweetsToRank });
     }
 }
@@ -101,20 +103,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Run processTweets immediately and then every 2 seconds
 processTweets();
-setInterval(processTweets, 2000);
+setInterval(processTweets, 5000);
 
-// Modify the MutationObserver to only process main tweets
+// Modify the MutationObserver to only process new, unranked main tweets
 const observer = new MutationObserver((mutations) => {
+    let newUnrankedTweetFound = false;
     mutations.forEach((mutation) => {
         if (mutation.type === 'childList') {
             mutation.addedNodes.forEach((node) => {
                 if (node.nodeType === Node.ELEMENT_NODE && 
-                    node.matches('article[data-testid="tweet"]:not([data-testid*="reply"])')) {
-                    processTweets(); // Process all unranked tweets when a new one is added
+                    node.matches('article[data-testid="tweet"]:not([data-testid*="reply"]):not([data-ranked]):not([data-ranked="pending"])')) {
+                    newUnrankedTweetFound = true;
                 }
             });
         }
     });
+    if (newUnrankedTweetFound) {
+        processTweets(); // Process all unranked tweets when a new one is added
+    }
 });
 
 observer.observe(document.body, { childList: true, subtree: true });

@@ -7,11 +7,17 @@ let unrankedTweets = [];
 let processingTweets = false;
 let currentTabId = null;
 let retryTimeout = null;
+let processedTweetIds = new Set();
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'rankTweets') {
     currentTabId = sender.tab.id;
-    pendingTweets.push(...request.tweets);
+    request.tweets.forEach(tweet => {
+      if (!processedTweetIds.has(tweet.id)) {
+        pendingTweets.push(tweet);
+        processedTweetIds.add(tweet.id);
+      }
+    });
     processTweets();
     return true; // Indicates that the response is sent asynchronously
   }
@@ -32,7 +38,7 @@ async function processTweets() {
   } catch (error) {
     console.error('Error ranking tweets:', error);
     if (currentTabId) {
-      chrome.tabs.sendMessage(currentTabId, { action: 'tweetRatings', ratings: tweetsToProcess.map(() => null) });
+      chrome.tabs.sendMessage(currentTabId, { action: 'tweetRatings', ratings: tweetsToProcess.map(tweet => ({ id: tweet.id, rating: null })) });
     }
   }
 
@@ -50,7 +56,7 @@ async function rankTweetsWithGemini(tweets) {
   const requestBody = {
     contents: [{
       parts: [{
-        text: `Rate each of the following tweets on a scale of 1-10 based on how well thought out they are. Respond with only the numeric ratings, separated by commas.\n\n${tweets.map((tweet, index) => `Tweet ${index + 1}: "${tweet}"`).join('\n\n')}`
+        text: `Rate each of the following tweets on a scale of 1-10 based on how well thought out they are. Respond with only the numeric ratings, separated by commas.\n\n${tweets.map((tweet, index) => `Tweet ${index + 1}: "${tweet.text}"`).join('\n\n')}`
       }]
     }]
   };
@@ -72,12 +78,12 @@ async function rankTweetsWithGemini(tweets) {
       console.warn('API quota reached. Retrying in 5 seconds.');
       unrankedTweets.push(...tweets);
       scheduleRetry();
-      return tweets.map(() => null);
+      return tweets.map(tweet => ({ id: tweet.id, rating: null }));
     }
 
     if (!response.ok) {
       console.error(`API call #${apiCallCount} failed with status: ${response.status}`);
-      return tweets.map(() => -2);
+      return tweets.map(tweet => ({ id: tweet.id, rating: -2 }));
     }
 
     const data = await response.json();
@@ -86,7 +92,7 @@ async function rankTweetsWithGemini(tweets) {
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
       console.error(`API call #${apiCallCount} returned unexpected data structure:`);
       console.error('Received structure:', JSON.stringify(data, null, 2));
-      return tweets.map(() => -2);
+      return tweets.map(tweet => ({ id: tweet.id, rating: -2 }));
     }
 
     const ratingText = data.candidates[0].content.parts[0].text;
@@ -97,10 +103,10 @@ async function rankTweetsWithGemini(tweets) {
 
     console.log(`API call #${apiCallCount} successful. Ratings: ${ratings.join(', ')}`);
 
-    return ratings;
+    return tweets.map((tweet, index) => ({ id: tweet.id, rating: ratings[index] }));
   } catch (error) {
     console.error(`Error in API call #${apiCallCount}:`, error);
-    return tweets.map(() => -4);
+    return tweets.map(tweet => ({ id: tweet.id, rating: -4 }));
   }
 }
 

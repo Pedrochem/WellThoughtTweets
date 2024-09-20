@@ -40,51 +40,30 @@ function addRankingToTweet(tweetElement, ranking) {
     actionBar.insertBefore(rankContainer, actionBar.firstChild);
 }
 
-// async function processTweet(tweet) {
-//     if (!tweet.hasAttribute('data-ranked')) {
-//       const tweetText = tweet.querySelector('div[data-testid="tweetText"]')?.textContent;
-//       if (tweetText) {
-//         let ranking;
-//         try {
-//           ranking = await getRanking(tweetText);
-//         } catch (error) {
-//           console.error('Error getting ranking:', error);
-//           ranking = -1;
-//         }
-//         addRankingToTweet(tweet, ranking);
-//         tweet.setAttribute('data-ranked', 'true');
-//       }
-//     }
-// }
-
-async function getRanking(tweetText) {
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({ action: 'rankTweet', tweetText }, (response) => {
-        if (response.rating === -1) {
-          reject(new Error('Error ranking tweet'));
-        } else {
-          resolve(response.rating);
-        }
-      });
-    });
+function getTweetId(tweetElement) {
+    const tweetLink = tweetElement.querySelector('a[href*="/status/"]');
+    if (tweetLink) {
+        const urlParts = tweetLink.href.split('/');
+        return urlParts[urlParts.length - 1];
+    }
+    return null;
 }
 
 function processTweets() {
-    // Only select tweets that haven't been ranked or are not pending
     const tweets = document.querySelectorAll('article[data-testid="tweet"]:not([data-ranked]):not([data-ranked="pending"]):not([data-testid*="reply"])');
     const tweetsToRank = [];
     console.log('Tweets selected for ranking:', tweets);
 
     tweets.forEach(tweet => {
         const tweetText = tweet.querySelector('div[data-testid="tweetText"]')?.textContent;
-        if (tweetText) {
-            tweetsToRank.push(tweetText);
+        const tweetId = getTweetId(tweet);
+        if (tweetText && tweetId) {
+            tweetsToRank.push({ id: tweetId, text: tweetText });
             tweet.setAttribute('data-ranked', 'pending');
         }
     });
 
     if (tweetsToRank.length > 0) {
-        console.log('Hey');
         chrome.runtime.sendMessage({ action: 'rankTweets', tweets: tweetsToRank });
     }
 }
@@ -92,16 +71,25 @@ function processTweets() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'tweetRatings') {
         const tweets = document.querySelectorAll('article[data-testid="tweet"][data-ranked="pending"]:not([data-testid*="reply"])');
-        message.ratings.forEach((rating, index) => {
-            if (tweets[index]) {
-                addRankingToTweet(tweets[index], rating);
-                tweets[index].setAttribute('data-ranked', rating === null ? 'pending' : 'true');
+        const tweetMap = new Map();
+        tweets.forEach(tweet => {
+            const tweetId = getTweetId(tweet);
+            if (tweetId) {
+                tweetMap.set(tweetId, tweet);
+            }
+        });
+
+        message.ratings.forEach(({ id, rating }) => {
+            const tweet = tweetMap.get(id);
+            if (tweet) {
+                addRankingToTweet(tweet, rating);
+                tweet.setAttribute('data-ranked', rating === null ? 'pending' : 'true');
             }
         });
     }
 });
 
-// Run processTweets immediately and then every 2 seconds
+// Run processTweets immediately and then every 5 seconds
 processTweets();
 setInterval(processTweets, 5000);
 

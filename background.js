@@ -13,10 +13,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'rankTweets') {
     currentTabId = sender.tab.id;
     request.tweets.forEach(tweet => {
-      if (!processedTweetIds.has(tweet.id.toString())) { // Ensure ID is a string
-        pendingTweets.push(tweet);
-        processedTweetIds.add(tweet.id.toString()); // Ensure ID is a string
-      }
+      pendingTweets.push(tweet);
     });
     processTweets();
     return true; // Indicates that the response is sent asynchronously
@@ -56,7 +53,7 @@ async function rankTweetsWithGemini(tweets) {
   const requestBody = {
     contents: [{
       parts: [{
-        text: `You are a professional tweet rater with great philsophical perspectives. You should rank tweets on a scale of 1-10 based on how well thought out they are. You should value creativity, uniqueness, reflectiveness, consciousness, and mostly thoughtfulness over pure engagement metrics. Respond with only the numeric ratings, separated by commas.\n\n${tweets.map((tweet, index) => `Tweet ${index + 1}: "${tweet.text}"`).join('\n\n')}`
+        text: `You are a professional tweet rater with great philsophical perspectives. You should rank tweets on a scale of 1-10 based on how well thought and how well argued out they are. You should value aspects of a post such as creativity, uniqueness, reflectiveness, consciousness, thoughtfulness, deep meaning, and intelligence. Respond with only the numeric ratings, separated by commas.\n\n${tweets.map((tweet, index) => `Tweet ${index + 1}: "${tweet.text}"`).join('\n\n')}`
       }]
     }]
   };
@@ -101,13 +98,11 @@ async function rankTweetsWithGemini(tweets) {
       return isNaN(rating) ? -3 : rating;
     });
 
-    return tweets.map((tweet, index) => ({ id: tweet.id.toString(), rating: ratings[index] })); // Ensure ID is a string
-    
     tweets.forEach((tweet, index) => {
       console.log(`Tweet ID: ${tweet.id}, Rating: ${ratings[index]}`);
     });
+    return tweets.map((tweet, index) => ({ id: tweet.id.toString(), rating: ratings[index] })); // Ensure ID is a string
 
-    return tweets.map((tweet, index) => ({ id: tweet.id, rating: ratings[index] }));
   } catch (error) {
     console.error(`Error in API call #${apiCallCount}:`, error);
     return tweets.map(tweet => ({ id: tweet.id, rating: -4 }));

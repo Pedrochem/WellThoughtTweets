@@ -84,7 +84,12 @@ function processTweets() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'tweetRatings') {
-        const tweets = document.querySelectorAll('article[data-testid="tweet"][data-ranked="pending"]:not([data-testid*="reply"])');
+        console.log('Received tweet ratings:', message.ratings);
+
+        // const tweets = document.querySelectorAll('article[data-testid="tweet"][data-ranked="pending"]:not([data-testid*="reply"])');
+        const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+        console.log('Current tweets:', tweets);
+
         const tweetMap = new Map();
         tweets.forEach(tweet => {
             const tweetId = getTweetId(tweet);
@@ -92,6 +97,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 tweetMap.set(tweetId, tweet);
             }
         });
+        console.log('Current tweets id maps:', tweetMap);
 
         message.ratings.forEach(({ id, rating }) => {
             const tweet = tweetMap.get(id.toString()); // Ensure ID is a string
@@ -99,7 +105,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 addRankingToTweet(tweet, rating);
                 tweet.setAttribute('data-ranked', rating === null ? 'pending' : 'true');
                 localStorage.setItem(`tweet-ranking-${id.toString()}`, rating); // Ensure ID is a string
-            }
+            } else {
+                console.warn(`Warning: Received rating for tweet ID ${id}, but couldn't find matching tweet element.`);
+              }
         });
     }
 });

@@ -2,31 +2,55 @@ const GEMINI_API_KEY = 'AIzaSyBuHfr0rp1nfagprjSsuuY097QkA0gHsOQ';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
 let apiCallCount = 0;
+let pendingTweets = [];
+let unrankedTweets = [];
+let processingTweets = false;
+let currentTabId = null;
+let retryTimeout = null;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'rankTweet') {
-    rankTweetWithGemini(request.tweetText)
-      .then(rating => {
-        sendResponse({ rating });
-        console.log(`Total API calls: ${apiCallCount}`);
-      })
-      .catch(error => {
-        console.error('Error ranking tweet:', error);
-        sendResponse({ rating: -1 });
-      });
+  if (request.action === 'rankTweets') {
+    currentTabId = sender.tab.id;
+    pendingTweets.push(...request.tweets);
+    processTweets();
     return true; // Indicates that the response is sent asynchronously
   }
 });
 
-async function rankTweetWithGemini(tweetText) {
+async function processTweets() {
+  if (processingTweets || (pendingTweets.length === 0 && unrankedTweets.length === 0)) return;
+
+  processingTweets = true;
+  const tweetsToProcess = [...unrankedTweets, ...pendingTweets.splice(0, 10 - unrankedTweets.length)];
+  unrankedTweets = [];
+
+  try {
+    const ratings = await rankTweetsWithGemini(tweetsToProcess);
+    if (currentTabId) {
+      chrome.tabs.sendMessage(currentTabId, { action: 'tweetRatings', ratings });
+    }
+  } catch (error) {
+    console.error('Error ranking tweets:', error);
+    if (currentTabId) {
+      chrome.tabs.sendMessage(currentTabId, { action: 'tweetRatings', ratings: tweetsToProcess.map(() => null) });
+    }
+  }
+
+  processingTweets = false;
+  if (pendingTweets.length > 0 || unrankedTweets.length > 0) {
+    processTweets(); // Process next batch if there are more tweets
+  }
+}
+
+async function rankTweetsWithGemini(tweets) {
   apiCallCount++;
   console.log(`Making API call #${apiCallCount}`);
-  console.log(`Tweet text: "${tweetText}"`);
+  console.log(`Tweets to rank: ${tweets.length}`);
 
   const requestBody = {
     contents: [{
       parts: [{
-        text: `Rate the following tweet on a scale of 1-10 based on how well thought out it is. Respond with only the numeric rating.\n\nTweet: "${tweetText}"`
+        text: `Rate each of the following tweets on a scale of 1-10 based on how well thought out they are. Respond with only the numeric ratings, separated by commas.\n\n${tweets.map((tweet, index) => `Tweet ${index + 1}: "${tweet}"`).join('\n\n')}`
       }]
     }]
   };
@@ -44,39 +68,50 @@ async function rankTweetWithGemini(tweetText) {
 
     console.log(`API Response Status: ${response.status} ${response.statusText}`);
 
+    if (response.status === 429) {
+      console.warn('API quota reached. Retrying in 5 seconds.');
+      unrankedTweets.push(...tweets);
+      scheduleRetry();
+      return tweets.map(() => null);
+    }
+
     if (!response.ok) {
       console.error(`API call #${apiCallCount} failed with status: ${response.status}`);
-      return -2;
+      return tweets.map(() => -2);
     }
 
     const data = await response.json();
     console.log('API Response:', JSON.stringify(data, null, 2));
 
-    if (!data.candidates || !data.candidates[0]) {
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
       console.error(`API call #${apiCallCount} returned unexpected data structure:`);
       console.error('Received structure:', JSON.stringify(data, null, 2));
-      return -2;
+      return tweets.map(() => -2);
     }
 
-    const candidate = data.candidates[0];
-    const ratingText = candidate.content.parts[0].text;
-    const rating = parseInt(ratingText);
+    const ratingText = data.candidates[0].content.parts[0].text;
+    const ratings = ratingText.split(',').map(r => {
+      const rating = parseInt(r.trim());
+      return isNaN(rating) ? -3 : rating;
+    });
 
-    if (isNaN(rating)) {
-      console.warn(`API call #${apiCallCount} returned non-numeric rating: "${ratingText}"`);
-      return -3;
-    }
+    console.log(`API call #${apiCallCount} successful. Ratings: ${ratings.join(', ')}`);
 
-    // const finalRating = Math.min(Math.max(rating, 1), 10);
-    const finalRating = rating;
-    console.log(`API call #${apiCallCount} successful. Rating: ${finalRating}`);
-
-    return finalRating;
+    return ratings;
   } catch (error) {
     console.error(`Error in API call #${apiCallCount}:`, error);
-    return -4;
+    return tweets.map(() => -4);
   }
 }
 
-// Log initial API call count
+function scheduleRetry() {
+  if (retryTimeout) {
+    clearTimeout(retryTimeout);
+  }
+  retryTimeout = setTimeout(() => {
+    retryTimeout = null;
+    processTweets();
+  }, 5000);
+}
+
 console.log('Tweet Thought Ranker background script loaded. Initial API call count: 0');

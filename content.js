@@ -11,7 +11,7 @@ function addRankingToTweet(tweetElement, ranking) {
   
     const rankText = document.createElement('span');
     rankText.className = 'tweet-ranker-rating';
-    rankText.textContent = `${ranking}/10`;
+    rankText.textContent = ranking === null ? '.../ 10' : `${ranking}/10`;
     rankText.style.fontSize = '13px';
     rankText.style.fontWeight = 'bold';
     rankText.style.color = 'rgb(83, 100, 113)';
@@ -38,9 +38,9 @@ function addRankingToTweet(tweetElement, ranking) {
     rankContainer.appendChild(tooltip);
     
     actionBar.insertBefore(rankContainer, actionBar.firstChild);
-  }
-  
-  async function processTweet(tweet) {
+}
+
+async function processTweet(tweet) {
     if (!tweet.hasAttribute('data-ranked')) {
       const tweetText = tweet.querySelector('div[data-testid="tweetText"]')?.textContent;
       if (tweetText) {
@@ -55,9 +55,9 @@ function addRankingToTweet(tweetElement, ranking) {
         tweet.setAttribute('data-ranked', 'true');
       }
     }
-  }
-  
-  async function getRanking(tweetText) {
+}
+
+async function getRanking(tweetText) {
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage({ action: 'rankTweet', tweetText }, (response) => {
         if (response.rating === -1) {
@@ -67,32 +67,56 @@ function addRankingToTweet(tweetElement, ranking) {
         }
       });
     });
-  }
-  
-  async function processTweets() {
-    const tweets = document.querySelectorAll('article[data-testid="tweet"]:not([data-ranked])');
-    for (const tweet of tweets) {
-      await processTweet(tweet);
-    }
-  }
-  
-  // Run processTweets immediately and then every 2 seconds
-  processTweets();
-  setInterval(processTweets, 2000);
-  
-  // Also use a MutationObserver to catch newly added tweets
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.type === 'childList') {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === Node.ELEMENT_NODE && node.matches('article[data-testid="tweet"]')) {
-            processTweet(node);
-          }
-        });
-      }
+}
+
+async function processTweets() {
+    // Use a more specific selector to target only main tweets (posts)
+    const tweets = document.querySelectorAll('article[data-testid="tweet"]:not([data-ranked]):not([data-testid*="reply"])');
+    const tweetsToRank = [];
+
+    tweets.forEach(tweet => {
+        const tweetText = tweet.querySelector('div[data-testid="tweetText"]')?.textContent;
+        if (tweetText) {
+            tweetsToRank.push(tweetText);
+            tweet.setAttribute('data-ranked', 'pending');
+        }
     });
-  });
-  
-  observer.observe(document.body, { childList: true, subtree: true });
-  
-  console.log('Tweet Thought Ranker content script loaded');
+
+    if (tweetsToRank.length > 0) {
+        chrome.runtime.sendMessage({ action: 'rankTweets', tweets: tweetsToRank });
+    }
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'tweetRatings') {
+        const tweets = document.querySelectorAll('article[data-testid="tweet"][data-ranked="pending"]:not([data-testid*="reply"])');
+        message.ratings.forEach((rating, index) => {
+            if (tweets[index]) {
+                addRankingToTweet(tweets[index], rating);
+                tweets[index].setAttribute('data-ranked', rating === null ? 'pending' : 'true');
+            }
+        });
+    }
+});
+
+// Run processTweets immediately and then every 2 seconds
+processTweets();
+setInterval(processTweets, 2000);
+
+// Modify the MutationObserver to only process main tweets
+const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === Node.ELEMENT_NODE && 
+                    node.matches('article[data-testid="tweet"]:not([data-testid*="reply"])')) {
+                    processTweets(); // Process all unranked tweets when a new one is added
+                }
+            });
+        }
+    });
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
+
+console.log('Tweet Thought Ranker content script loaded');

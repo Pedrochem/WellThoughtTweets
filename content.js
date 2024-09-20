@@ -49,7 +49,7 @@ function getTweetId(tweetElement) {
         if (statusIndex !== -1 && statusIndex + 1 < urlParts.length) {
             const tweetId = urlParts[statusIndex + 1];
             console.log('Extracted tweet ID:', tweetId);
-            return tweetId;
+            return tweetId.toString(); // Ensure ID is a string
         }
     }
     console.log('No valid tweet ID found');
@@ -94,11 +94,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
 
         message.ratings.forEach(({ id, rating }) => {
-            const tweet = tweetMap.get(id);
+            const tweet = tweetMap.get(id.toString()); // Ensure ID is a string
             if (tweet) {
                 addRankingToTweet(tweet, rating);
                 tweet.setAttribute('data-ranked', rating === null ? 'pending' : 'true');
-                localStorage.setItem(`tweet-ranking-${id}`, rating);
+                localStorage.setItem(`tweet-ranking-${id.toString()}`, rating); // Ensure ID is a string
             }
         });
     }

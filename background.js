@@ -13,9 +13,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'rankTweets') {
     currentTabId = sender.tab.id;
     request.tweets.forEach(tweet => {
-      if (!processedTweetIds.has(tweet.id)) {
+      if (!processedTweetIds.has(tweet.id.toString())) { // Ensure ID is a string
         pendingTweets.push(tweet);
-        processedTweetIds.add(tweet.id);
+        processedTweetIds.add(tweet.id.toString()); // Ensure ID is a string
       }
     });
     processTweets();
@@ -101,7 +101,11 @@ async function rankTweetsWithGemini(tweets) {
       return isNaN(rating) ? -3 : rating;
     });
 
-    console.log(`API call #${apiCallCount} successful. Ratings: ${ratings.join(', ')}`);
+    return tweets.map((tweet, index) => ({ id: tweet.id.toString(), rating: ratings[index] })); // Ensure ID is a string
+    
+    tweets.forEach((tweet, index) => {
+      console.log(`Tweet ID: ${tweet.id}, Rating: ${ratings[index]}`);
+    });
 
     return tweets.map((tweet, index) => ({ id: tweet.id, rating: ratings[index] }));
   } catch (error) {

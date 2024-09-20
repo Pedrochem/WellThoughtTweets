@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Tweet Thought Ranker",
+  "version": "1.0",
+  "description": "Ranks tweets based on how well thought they are using GPT-4.",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions": ["https://api.openai.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js"
+  }
+}

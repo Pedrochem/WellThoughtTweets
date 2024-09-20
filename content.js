@@ -1,43 +1,47 @@
 function addRankingToTweet(tweetElement, ranking) {
-    const actionBar = tweetElement.querySelector('div[role="group"]');
-    if (!actionBar) return;
-  
-    const rankContainer = document.createElement('div');
-    rankContainer.className = 'tweet-ranker-container';
-    rankContainer.style.display = 'flex';
-    rankContainer.style.alignItems = 'center';
-    rankContainer.style.marginRight = '16px';
-    rankContainer.style.position = 'relative'; // For positioning the tooltip
-  
-    const rankText = document.createElement('span');
-    rankText.className = 'tweet-ranker-rating';
+    let rankContainer = tweetElement.querySelector('.tweet-ranker-container');
+    
+    if (!rankContainer) {
+        const actionBar = tweetElement.querySelector('div[role="group"]');
+        if (!actionBar) return;
+
+        rankContainer = document.createElement('div');
+        rankContainer.className = 'tweet-ranker-container';
+        rankContainer.style.display = 'flex';
+        rankContainer.style.alignItems = 'center';
+        rankContainer.style.marginRight = '16px';
+        rankContainer.style.position = 'relative'; // For positioning the tooltip
+
+        const rankText = document.createElement('span');
+        rankText.className = 'tweet-ranker-rating';
+        rankContainer.appendChild(rankText);
+
+        // Add tooltip functionality
+        rankContainer.title = 'Well Thought Rank';
+
+        // Create a custom tooltip (optional, for more styling control)
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tweet-ranker-tooltip';
+        tooltip.textContent = 'Well Thought Rank';
+        tooltip.style.display = 'none';
+        rankContainer.appendChild(tooltip);
+
+        rankContainer.addEventListener('mouseenter', () => {
+            tooltip.style.display = 'block';
+        });
+
+        rankContainer.addEventListener('mouseleave', () => {
+            tooltip.style.display = 'none';
+        });
+
+        actionBar.insertBefore(rankContainer, actionBar.firstChild);
+    }
+
+    const rankText = rankContainer.querySelector('.tweet-ranker-rating');
     rankText.textContent = ranking === null ? '.../ 10' : `${ranking}/10`;
     rankText.style.fontSize = '13px';
     rankText.style.fontWeight = 'bold';
     rankText.style.color = 'rgb(83, 100, 113)';
-    
-    // Add tooltip functionality
-    rankContainer.title = 'Well Thought Rank';
-  
-    // Create a custom tooltip (optional, for more styling control)
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tweet-ranker-tooltip';
-    tooltip.textContent = 'Well Thought Rank';
-    tooltip.style.display = 'none';
-    rankContainer.appendChild(tooltip);
-  
-    rankContainer.addEventListener('mouseenter', () => {
-      tooltip.style.display = 'block';
-    });
-  
-    rankContainer.addEventListener('mouseleave', () => {
-      tooltip.style.display = 'none';
-    });
-  
-    rankContainer.appendChild(rankText);
-    rankContainer.appendChild(tooltip);
-    
-    actionBar.insertBefore(rankContainer, actionBar.firstChild);
 }
 
 async function processTweet(tweet) {
@@ -71,14 +75,16 @@ async function getRanking(tweetText) {
 
 async function processTweets() {
     // Use a more specific selector to target only main tweets (posts)
-    const tweets = document.querySelectorAll('article[data-testid="tweet"]:not([data-ranked]):not([data-testid*="reply"])');
+    const tweets = document.querySelectorAll('article[data-testid="tweet"]:not([data-ranked="true"]):not([data-testid*="reply"])');
     const tweetsToRank = [];
 
     tweets.forEach(tweet => {
         const tweetText = tweet.querySelector('div[data-testid="tweetText"]')?.textContent;
         if (tweetText) {
             tweetsToRank.push(tweetText);
-            tweet.setAttribute('data-ranked', 'pending');
+            if (!tweet.hasAttribute('data-ranked')) {
+                tweet.setAttribute('data-ranked', 'pending');
+            }
         }
     });
 
@@ -89,7 +95,7 @@ async function processTweets() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'tweetRatings') {
-        const tweets = document.querySelectorAll('article[data-testid="tweet"][data-ranked="pending"]:not([data-testid*="reply"])');
+        const tweets = document.querySelectorAll('article[data-testid="tweet"]:not([data-ranked="true"]):not([data-testid*="reply"])');
         message.ratings.forEach((rating, index) => {
             if (tweets[index]) {
                 addRankingToTweet(tweets[index], rating);

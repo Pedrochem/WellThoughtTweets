@@ -58,8 +58,14 @@ function processTweets() {
         const tweetText = tweet.querySelector('div[data-testid="tweetText"]')?.textContent;
         const tweetId = getTweetId(tweet);
         if (tweetText && tweetId) {
-            tweetsToRank.push({ id: tweetId, text: tweetText });
-            tweet.setAttribute('data-ranked', 'pending');
+            const storedRanking = localStorage.getItem(`tweet-ranking-${tweetId}`);
+            if (storedRanking !== null) {
+                addRankingToTweet(tweet, parseInt(storedRanking));
+                tweet.setAttribute('data-ranked', 'true');
+            } else {
+                tweetsToRank.push({ id: tweetId, text: tweetText });
+                tweet.setAttribute('data-ranked', 'pending');
+            }
         }
     });
 
@@ -84,6 +90,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (tweet) {
                 addRankingToTweet(tweet, rating);
                 tweet.setAttribute('data-ranked', rating === null ? 'pending' : 'true');
+                localStorage.setItem(`tweet-ranking-${id}`, rating);
             }
         });
     }

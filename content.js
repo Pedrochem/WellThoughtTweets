@@ -43,9 +43,16 @@ function addRankingToTweet(tweetElement, ranking) {
 function getTweetId(tweetElement) {
     const tweetLink = tweetElement.querySelector('a[href*="/status/"]');
     if (tweetLink) {
+        console.log('Full tweet link:', tweetLink.href);
         const urlParts = tweetLink.href.split('/');
-        return urlParts[urlParts.length - 1];
+        const statusIndex = urlParts.indexOf('status');
+        if (statusIndex !== -1 && statusIndex + 1 < urlParts.length) {
+            const tweetId = urlParts[statusIndex + 1];
+            console.log('Extracted tweet ID:', tweetId);
+            return tweetId;
+        }
     }
+    console.log('No valid tweet ID found');
     return null;
 }
 
@@ -59,8 +66,9 @@ function processTweets() {
         const tweetId = getTweetId(tweet);
         if (tweetText && tweetId) {
             const storedRanking = localStorage.getItem(`tweet-ranking-${tweetId}`);
-            if (storedRanking !== null) {
+            if (storedRanking !== null && tweetId !== '1') {
                 addRankingToTweet(tweet, parseInt(storedRanking));
+                console.log('Tweet selected already has rank!',tweet, storedRanking, 'FULL-ID:',tweetId);
                 tweet.setAttribute('data-ranked', 'true');
             } else {
                 tweetsToRank.push({ id: tweetId, text: tweetText });

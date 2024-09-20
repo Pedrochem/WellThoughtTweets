@@ -46,32 +46,35 @@ async function rankTweetWithGemini(tweetText) {
 
     if (!response.ok) {
       console.error(`API call #${apiCallCount} failed with status: ${response.status}`);
-      throw new Error(`HTTP error! status: ${response.status}`);
+      return -2;
     }
 
     const data = await response.json();
     console.log('API Response:', JSON.stringify(data, null, 2));
 
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
-      console.error(`API call #${apiCallCount} returned unexpected data structure`);
-      throw new Error('Unexpected API response structure');
+    if (!data.candidates || !data.candidates[0]) {
+      console.error(`API call #${apiCallCount} returned unexpected data structure:`);
+      console.error('Received structure:', JSON.stringify(data, null, 2));
+      return -2;
     }
 
-    const ratingText = data.candidates[0].content.parts[0].text;
+    const candidate = data.candidates[0];
+    const ratingText = candidate.content.parts[0].text;
     const rating = parseInt(ratingText);
 
     if (isNaN(rating)) {
       console.warn(`API call #${apiCallCount} returned non-numeric rating: "${ratingText}"`);
-      return -2; // Default to -2 if we can't parse a number
+      return -3;
     }
 
-    const finalRating = Math.min(Math.max(rating, 1), 10);
+    // const finalRating = Math.min(Math.max(rating, 1), 10);
+    const finalRating = rating;
     console.log(`API call #${apiCallCount} successful. Rating: ${finalRating}`);
 
     return finalRating;
   } catch (error) {
     console.error(`Error in API call #${apiCallCount}:`, error);
-    throw error; // Re-throw the error to be caught by the caller
+    return -4;
   }
 }
 

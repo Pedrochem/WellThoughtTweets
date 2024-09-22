@@ -140,8 +140,8 @@ console.log('Tweet Thought Ranker content script loaded');
 
 function getRankColor(ranking) {
   if (ranking >= 8) return '#32CD32';
-  if (ranking >= 7) return '#3CB371';
-  if (ranking >= 5) return '#228B22';
+  if (ranking >= 7) return '#228B22';
+  if (ranking >= 5) return '#3CB371';
   if (ranking >= 3) return '#6B8E23';
   if (ranking >= 1) return '#024731';
   return 'rgb(83, 100, 113)'; // Default color for null or invalid ratings

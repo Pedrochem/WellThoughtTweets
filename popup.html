@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tweet Thought Ranker Settings</title>
+  <link rel="stylesheet" type="text/css" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Settings</h1>
+    <label for="apiKey">Google AI Studio API Key:</label>
+    <input type="password" id="apiKey" placeholder="Enter your API key" />
+    <a href="https://cloud.google.com/ai-platform" target="_blank" class="link">Get your API key</a>
+    <label for="hideLowRankTweets">Hide tweets with rank below:</label>
+    <select id="hideLowRankTweets">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+      <option value="7">7</option>
+      <option value="8">8</option>
+      <option value="9">9</option>
+    </select>
+    <button id="save">Save</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

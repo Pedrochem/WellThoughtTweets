@@ -12,7 +12,16 @@
       "css": ["styles.css"]
     }
   ],
-  "options_page": "options.html",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    },
+    "default_popup_width": 400,
+    "default_popup_height": 600 
+  },
   "background": {
     "service_worker": "background.js"
   }

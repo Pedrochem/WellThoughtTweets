@@ -2,9 +2,10 @@ function addRankingToTweet(tweetElement, ranking) {
     const actionBar = tweetElement.querySelector('div[role="group"]');
     if (!actionBar) return;
 
-    // Hide tweet if ranking is below 3 and the user has opted in
+    // Hide tweet if ranking is below the user-defined threshold
     chrome.storage.sync.get('hideLowRankTweets', (data) => {
-        if (data.hideLowRankTweets && ranking < 3) {
+        const hideThreshold = parseInt(data.hideLowRankTweets, 10);
+        if (hideThreshold && ranking < hideThreshold) {
             tweetElement.style.display = 'none';
             return;
         }
@@ -94,7 +95,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'tweetRatings') {
         console.log('Received tweet ratings:', message.ratings);
 
-        // const tweets = document.querySelectorAll('article[data-testid="tweet"][data-ranked="pending"]:not([data-testid*="reply"])');
         const tweets = document.querySelectorAll('article[data-testid="tweet"]');
         console.log('Current tweets:', tweets);
 

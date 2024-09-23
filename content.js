@@ -146,22 +146,3 @@ function getRankColor(ranking) {
   if (ranking >= 1) return '#024731';
   return 'rgb(83, 100, 113)'; // Default color for null or invalid ratings
 }
-
-
-// function getRankColor(ranking) {
-//   if (ranking >= 8) return '#32CD32';
-//   if (ranking >= 7) return '#2E8B57';
-//   if (ranking >= 5) return '#006400';
-//   if (ranking >= 3) return '#556B2F';
-//   if (ranking >= 1) return '#3C5A14';
-//   return 'rgb(83, 100, 113)'; // Default color for null or invalid ratings
-// }
-
-// function getRankColor(ranking) {
-//     if (ranking >= 8) return 'green';
-//     if (ranking >= 7) return 'darkgreen';
-//     if (ranking >= 5) return '#DAA520';
-//     if (ranking >= 3) return 'darkorange';
-//     if (ranking >= 1) return 'darkred';
-//     return 'rgb(83, 100, 113)'; // Default color for null or invalid ratings
-// }

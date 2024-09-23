@@ -7,11 +7,11 @@
 <body>
   <div class="container">
     <h1>Settings</h1>
-    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link">Get your API key</a>
-    <label for="apiKey">Google AI Studio API Key:</label>
+    <label for="apiKey">Google AI Studio API Key: <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link">(Get your API key)</a></label>
     <input type="password" id="apiKey" placeholder="Enter your API key" />
     <label for="hideLowRankTweets">Hide tweets with rank equal to or below:</label>
     <select id="hideLowRankTweets" style="visibility: hidden;">
+      <option value="0">Do not hide any tweets</option>
       <option value="1">1</option>
       <option value="2">2</option>
       <option value="3">3</option>
@@ -23,7 +23,6 @@
       <option value="9">9</option>
     </select>
     <button id="save">Save</button>
-    <p id="reminder" class="reminder" style="display: none;">Please <a href="#" id="refreshLink">refresh</a> the page after saving your settings.</p>
   </div>
   <script src="popup.js"></script>
 </body>

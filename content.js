@@ -5,7 +5,7 @@ function addRankingToTweet(tweetElement, ranking) {
     // Hide tweet if ranking is below the user-defined threshold
     chrome.storage.sync.get('hideLowRankTweets', (data) => {
         const hideThreshold = parseInt(data.hideLowRankTweets, 10);
-        if (hideThreshold && ranking < hideThreshold) {
+        if (hideThreshold && hideThreshold > 0 && ranking <= hideThreshold) {
             tweetElement.style.display = 'none';
             return;
         }

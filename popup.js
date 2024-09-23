@@ -1,8 +1,6 @@
 const saveButton = document.getElementById('save');
 const apiKeyInput = document.getElementById('apiKey');
 const hideLowRankTweetsSelect = document.getElementById('hideLowRankTweets');
-const reminder = document.getElementById('reminder');
-const refreshLink = document.getElementById('refreshLink');
 
 function enableSaveButton() {
   saveButton.disabled = false;
@@ -19,7 +17,9 @@ saveButton.addEventListener('click', () => {
   const hideLowRankTweets = hideLowRankTweetsSelect.value;
   chrome.storage.sync.set({ apiKey: apiKey, hideLowRankTweets: hideLowRankTweets }, () => {
     disableSaveButton();
-    reminder.style.display = 'block';
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.reload(tabs[0].id);
+    });
   });
 });
 
@@ -40,10 +40,3 @@ chrome.storage.sync.get(['apiKey', 'hideLowRankTweets'], (data) => {
 
 apiKeyInput.addEventListener('input', enableSaveButton);
 hideLowRankTweetsSelect.addEventListener('change', enableSaveButton);
-
-refreshLink.addEventListener('click', (e) => {
-  e.preventDefault();
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.reload(tabs[0].id);
-  });
-});

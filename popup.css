@@ -45,7 +45,12 @@ button {
   width: 100%;
 }
 
-button:hover {
+button:disabled {
+  background-color: #ccd6dd;
+  cursor: not-allowed;
+}
+
+button:hover:enabled {
   background-color: #1a91da;
 }
 
@@ -58,5 +63,21 @@ button:hover {
 }
 
 .link:hover {
+  text-decoration: underline;
+}
+
+.reminder {
+  color: #657786;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.reminder a {
+  color: #1DA1F2;
+  text-decoration: none;
+}
+
+.reminder a:hover {
   text-decoration: underline;
 }

@@ -23,11 +23,11 @@ Welcome to **Well Thought Tweets**, the Chrome extension that uses AI to rank tw
 
 ### Content Script (`content.js`)
 
-Handles the insertion of ranking elements into tweets and communicates with the background script to fetch rankings. Because injecting JavaScript into web pages is always a good idea.
+Handles the insertion of ranking elements into tweets and communicates with the background script to fetch rankings.
 
 ### Background Script (`background.js`)
 
-Manages the API calls to Google's Gemini and processes the tweet rankings. Because who doesn't love a good background process eating up their CPU?
+Manages the API calls to Google's Gemini and processes the tweet rankings. 
 
 ### Options Page (`options.html`, `options.js`, `options.css`)
 

@@ -3,7 +3,7 @@ body {
   min-width: 400px; /* Set a minimum width */
   margin: 0;
   padding: 20px;
-  background-color: #f7f9fa;
+  background-color: #f0f0f0; /* Very light grey background color */
 }
 
 .container {
@@ -26,7 +26,7 @@ label {
   width: 100%;
 }
 
-input[type="password"], select {
+input[type="text"], select {
   width: 100%;
   padding: 8px;
   margin-bottom: 10px;
@@ -80,4 +80,15 @@ button:hover:enabled {
 
 .reminder a:hover {
   text-decoration: underline;
+}
+
+.colorful-ranks-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.colorful-ranks-container input[type="checkbox"] {
+  margin-right: 10px; /* Add space between checkbox and label */
 }

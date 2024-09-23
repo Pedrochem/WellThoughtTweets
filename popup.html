@@ -8,7 +8,7 @@
   <div class="container">
     <h1>Settings</h1>
     <label for="apiKey">Google AI Studio API Key: <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link">(Get your API key)</a></label>
-    <input type="password" id="apiKey" placeholder="Enter your API key" />
+    <input type="text" id="apiKey" placeholder="Enter your API key" />
     <label for="hideLowRankTweets">Hide tweets with rank equal to or below:</label>
     <select id="hideLowRankTweets" style="visibility: hidden;">
       <option value="0">Do not hide any tweets</option>
@@ -22,6 +22,10 @@
       <option value="8">8</option>
       <option value="9">9</option>
     </select>
+    <div class="colorful-ranks-container">
+      <input type="checkbox" id="colorfulRanks" checked />
+      <label for="colorfulRanks">Use colorful ranks</label>
+    </div>
     <button id="save">Save</button>
   </div>
   <script src="popup.js"></script>

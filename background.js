@@ -1,4 +1,4 @@
-const GEMINI_API_KEY = 'AIzaSyBuHfr0rp1nfagprjSsuuY097QkA0gHsOQ';
+let GEMINI_API_KEY = ''; // Initialize the API key variable
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
 let apiCallCount = 0;
@@ -9,7 +9,15 @@ let currentTabId = null;
 let retryTimeout = null;
 let processedTweetIds = new Set();
 
+// Listen for messages from the popup to update the API key
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'updateApiKey') {
+    GEMINI_API_KEY = request.apiKey;
+    console.log('API key updated:', GEMINI_API_KEY); // Log the full API key
+    sendResponse({ status: 'API key updated' });
+    return true;
+  }
+
   if (request.action === 'rankTweets') {
     currentTabId = sender.tab.id;
     request.tweets.forEach(tweet => {
@@ -34,6 +42,7 @@ async function processTweets() {
     }
   } catch (error) {
     console.error('Error ranking tweets:', error);
+    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error))); // Log full error details
     if (currentTabId) {
       chrome.tabs.sendMessage(currentTabId, { action: 'tweetRatings', ratings: tweetsToProcess.map(tweet => ({ id: tweet.id, rating: null })) });
     }
@@ -49,6 +58,7 @@ async function rankTweetsWithGemini(tweets) {
   apiCallCount++;
   console.log(`Making API call #${apiCallCount}`);
   console.log(`Tweets to rank: ${tweets.length}`);
+  console.log('Using API key:', GEMINI_API_KEY); // Log the full API key
 
   const requestBody = {
     contents: [{
@@ -79,23 +89,27 @@ async function rankTweetsWithGemini(tweets) {
     }
 
     if (!response.ok) {
+      // Error response
       console.error(`API call #${apiCallCount} failed with status: ${response.status}`);
-      return tweets.map(tweet => ({ id: tweet.id, rating: -2 }));
+      const errorText = await response.text();
+      console.error('Error response:', errorText); // Log the full error response
+      return tweets.map(tweet => ({ id: tweet.id, rating: -10})); // Return -10 if the response is not valid
     }
 
     const data = await response.json();
     console.log('API Response:', JSON.stringify(data, null, 2));
 
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
+      // API call returned unexpected data structure (Unsafe)
       console.error(`API call #${apiCallCount} returned unexpected data structure:`);
       console.error('Received structure:', JSON.stringify(data, null, 2));
-      return tweets.map(tweet => ({ id: tweet.id, rating: -2 }));
+      return tweets.map(tweet => ({ id: tweet.id, rating: -1 })); // Return -1 if the response is not valid
     }
 
     const ratingText = data.candidates[0].content.parts[0].text;
     const ratings = ratingText.split(',').map(r => {
       const rating = parseInt(r.trim());
-      return isNaN(rating) ? -3 : rating;
+      return isNaN(rating) ? -100 : rating; // Return -100 if the rating is not a number
     });
 
     tweets.forEach((tweet, index) => {
@@ -105,6 +119,7 @@ async function rankTweetsWithGemini(tweets) {
 
   } catch (error) {
     console.error(`Error in API call #${apiCallCount}:`, error);
+    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error))); // Log full error details
     return tweets.map(tweet => ({ id: tweet.id, rating: -4 }));
   }
 }

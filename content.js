@@ -34,13 +34,15 @@ function addRankingToTweet(tweetElement, ranking) {
 
         // Set rank text content and style
         if (ranking === null) {
-            rankText.textContent = 'Pending...';
+            rankText.textContent = 'Pending';
         } else if (ranking === undefined) {
             rankText.textContent = 'Error';
         } else if (ranking === -1) {
             rankText.textContent = 'Unsafe';
-        } else {
+        } else if (ranking >= 1 && ranking <= 10) {
             rankText.textContent = `${ranking}/10`;
+        } else {
+            rankText.textContent = 'Error';
         }
         rankText.style.fontSize = '13px';
         rankText.style.fontWeight = 'bold';

@@ -2,9 +2,9 @@
   "manifest_version": 3,
   "name": "Tweet Thought Ranker",
   "version": "1.0",
-  "description": "Ranks tweets based on how well thought they are using GPT-4.",
+  "description": "Ranks tweets based on how well thought they are using Gemini-1.5-flash.",
   "permissions": ["activeTab", "storage"],
-  "host_permissions": ["https://api.openai.com/*"],
+  "host_permissions": ["https://generativelanguage.googleapis.com/*"],
   "content_scripts": [
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],

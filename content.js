@@ -39,7 +39,7 @@ function addRankingToTweet(tweetElement, ranking) {
             rankText.textContent = 'Error';
         } else if (ranking === -1) {
             rankText.textContent = 'Unsafe';
-        } else if (ranking >= 1 && ranking <= 10) {
+        } else if (ranking >= 0 && ranking <= 10) {
             rankText.textContent = `${ranking}/10`;
         } else {
             rankText.textContent = 'Error';
@@ -94,15 +94,25 @@ function processTweets() {
     tweets.forEach(tweet => {
         const tweetText = tweet.querySelector('div[data-testid="tweetText"]')?.textContent;
         const tweetId = getTweetId(tweet);
-        if (tweetText && tweetId) {
+        console.log('Processing tweet:', { tweetText, tweetId });
+        if (tweetId) {
             const storedRanking = localStorage.getItem(`tweet-ranking-${tweetId}`);
             if (storedRanking !== null && parseInt(storedRanking) > 0 && parseInt(storedRanking) <= 10) {
                 addRankingToTweet(tweet, parseInt(storedRanking));
                 console.log('Tweet selected already has rank!', tweet, storedRanking, 'FULL-ID:', tweetId);
                 tweet.setAttribute('data-ranked', 'true');
-            } else {
+            } else if (hasEmptyText(tweetText, tweetId)) {
+                addRankingToTweet(tweet, 0);
+                console.log('Tweet is emoji only, assigned rank 0!', tweet, 'FULL-ID:', tweetId);
+                tweet.setAttribute('data-ranked', 'true');
+            } else if (tweetText) {
                 tweetsToRank.push({ id: tweetId, text: tweetText });
                 tweet.setAttribute('data-ranked', 'pending');
+            } else {
+                // Handle empty tweetText as emoji-only
+                addRankingToTweet(tweet, 0);
+                console.log('Tweet text is empty, treating as emoji only, assigned rank 0!', tweet, 'FULL-ID:', tweetId);
+                tweet.setAttribute('data-ranked', 'true');
             }
         }
     });
@@ -110,6 +120,15 @@ function processTweets() {
     if (tweetsToRank.length > 0) {
         chrome.runtime.sendMessage({ action: 'rankTweets', tweets: tweetsToRank });
     }
+}
+
+function hasEmptyText(text, id) {
+    console.log('Checking if text is emoji only:', text);
+    if (!text) {
+        console.log('Teweet id:',id, ' has empty text');
+        return true;
+    }
+    return false;
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

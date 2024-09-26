@@ -5,6 +5,7 @@ Welcome to **Well Thought Tweets**, the Chrome extension that uses AI to rank tw
 ## Features
 
 - **Automated Tweet Ranking**: Uses Google's Gemini-1.5-flash to rank tweets on a scale of 1-10 based on their creativity, uniqueness, reflectiveness, thoughtfulness, etc. 
+- **Hide low-ranked tweets**: Clear your timeline from engagement farming and low-iq tweets. 
 
 ## Installation
 
@@ -15,8 +16,8 @@ Welcome to **Well Thought Tweets**, the Chrome extension that uses AI to rank tw
 5. Go to the options page and enter your Google AI Studio API key.
 
 ## Usage
-
-1. Open Twitter and watch as the extension ranks tweets in real-time.
+1. Open the extension's options and input your Google AI Studio API Key. 
+2. Open Twitter and watch as the extension ranks tweets in real-time.
 
 
 ## Development

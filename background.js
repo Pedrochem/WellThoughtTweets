@@ -31,6 +31,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function processTweets() {
   if (processingTweets || (pendingTweets.length === 0 && unrankedTweets.length === 0)) return;
 
+  if (!GEMINI_API_KEY) {
+    console.log('API key not set. Skipping tweet processing.');
+    return;
+  }
+
   processingTweets = true;
   const tweetsToProcess = [...unrankedTweets, ...pendingTweets.splice(0, 10 - unrankedTweets.length)];
   unrankedTweets = [];
@@ -55,6 +60,11 @@ async function processTweets() {
 }
 
 async function rankTweetsWithGemini(tweets) {
+  if (!GEMINI_API_KEY) {
+    console.log('API key not set. Cannot rank tweets.');
+    return tweets.map(tweet => ({ id: tweet.id, rating: null }));
+  }
+
   apiCallCount++;
   console.log(`Making API call #${apiCallCount}`);
   console.log(`Tweets to rank: ${tweets.length}`);
@@ -135,3 +145,13 @@ function scheduleRetry() {
 }
 
 console.log('Tweet Thought Ranker background script loaded. Initial API call count: 0');
+
+// Initialize the API key from storage when the script loads
+chrome.storage.sync.get(['apiKey'], (data) => {
+  if (data.apiKey) {
+    GEMINI_API_KEY = data.apiKey;
+    console.log('API key loaded from storage');
+  } else {
+    console.log('No API key found in storage');
+  }
+});

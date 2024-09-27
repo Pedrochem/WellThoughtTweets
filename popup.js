@@ -2,6 +2,7 @@ const saveButton = document.getElementById('save');
 const apiKeyInput = document.getElementById('apiKey');
 const hideLowRankTweetsSelect = document.getElementById('hideLowRankTweets');
 const colorfulRanksCheckbox = document.getElementById('colorfulRanks');
+const pauseResumeButton = document.getElementById('pauseResume');
 
 function enableSaveButton() {
   saveButton.disabled = false;
@@ -31,7 +32,7 @@ saveButton.addEventListener('click', () => {
   });
 });
 
-chrome.storage.sync.get(['apiKey', 'hideLowRankTweets', 'colorfulRanks'], (data) => {
+chrome.storage.sync.get(['apiKey', 'hideLowRankTweets', 'colorfulRanks', 'isPaused'], (data) => {
   console.log('Retrieved settings:', data);
   if (data.apiKey) {
     apiKeyInput.value = data.apiKey;
@@ -50,9 +51,31 @@ chrome.storage.sync.get(['apiKey', 'hideLowRankTweets', 'colorfulRanks'], (data)
   }
   // Show the select element after setting the value
   hideLowRankTweetsSelect.style.visibility = 'visible';
+  if (data.isPaused) {
+    pauseResumeButton.textContent = 'Resume Ranking';
+    pauseResumeButton.style.backgroundColor = '#4CAF50';
+  } else {
+    pauseResumeButton.textContent = 'Pause Ranking';
+    pauseResumeButton.style.backgroundColor = '#FF9900';
+  }
   disableSaveButton();
 });
 
 apiKeyInput.addEventListener('input', enableSaveButton);
 hideLowRankTweetsSelect.addEventListener('change', enableSaveButton);
 colorfulRanksCheckbox.addEventListener('change', enableSaveButton);
+pauseResumeButton.addEventListener('click', () => {
+  chrome.storage.sync.get(['isPaused'], (data) => {
+    const newPausedState = !data.isPaused;
+    chrome.storage.sync.set({ isPaused: newPausedState }, () => {
+      if (newPausedState) {
+        pauseResumeButton.textContent = 'Resume Ranking';
+        pauseResumeButton.style.backgroundColor = '#4CAF50';
+      } else {
+        pauseResumeButton.textContent = 'Pause Ranking';
+        pauseResumeButton.style.backgroundColor = '#FF9900';
+      }
+      chrome.runtime.sendMessage({ action: 'togglePause', isPaused: newPausedState });
+    });
+  });
+});

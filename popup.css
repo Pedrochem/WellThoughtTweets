@@ -92,3 +92,12 @@ button:hover:enabled {
 .colorful-ranks-container input[type="checkbox"] {
   margin-right: 10px; /* Add space between checkbox and label */
 }
+
+#pauseResume {
+  background-color: #FF9900;
+  margin-bottom: 10px;
+}
+
+#pauseResume:hover:enabled {
+  background-color: #E68A00;
+}

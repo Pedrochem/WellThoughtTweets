@@ -8,6 +8,7 @@ let processingTweets = false;
 let currentTabId = null;
 let retryTimeout = null;
 let processedTweetIds = new Set();
+let isPaused = false;
 
 // Listen for messages from the popup to update the API key
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -19,17 +20,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'rankTweets') {
-    currentTabId = sender.tab.id;
-    request.tweets.forEach(tweet => {
-      pendingTweets.push(tweet);
-    });
-    processTweets();
+    if (!isPaused) {
+      currentTabId = sender.tab.id;
+      request.tweets.forEach(tweet => {
+        pendingTweets.push(tweet);
+      });
+      processTweets();
+    }
     return true; // Indicates that the response is sent asynchronously
+  }
+
+  if (request.action === 'togglePause') {
+    isPaused = request.isPaused;
+    console.log('Ranking process ' + (isPaused ? 'paused' : 'resumed'));
+    if (!isPaused) {
+      processTweets(); // Resume processing if there are pending tweets
+    }
+    return true;
   }
 });
 
 async function processTweets() {
-  if (processingTweets || (pendingTweets.length === 0 && unrankedTweets.length === 0)) return;
+  if (isPaused || processingTweets || (pendingTweets.length === 0 && unrankedTweets.length === 0)) return;
 
   if (!GEMINI_API_KEY) {
     console.log('API key not set. Skipping tweet processing.');
@@ -147,11 +159,14 @@ function scheduleRetry() {
 console.log('Tweet Thought Ranker background script loaded. Initial API call count: 0');
 
 // Initialize the API key from storage when the script loads
-chrome.storage.sync.get(['apiKey'], (data) => {
+chrome.storage.sync.get(['apiKey', 'isPaused'], (data) => {
   if (data.apiKey) {
     GEMINI_API_KEY = data.apiKey;
     console.log('API key loaded from storage');
   } else {
     console.log('No API key found in storage');
   }
+  
+  isPaused = data.isPaused || false;
+  console.log('Ranking process is ' + (isPaused ? 'paused' : 'active'));
 });

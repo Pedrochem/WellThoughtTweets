@@ -38,7 +38,12 @@ Allows users to save their Google AI Studio API key.
 
 Contains the CSS for the ranking elements. 
 
-## Contributing
+### Contributing
 
 Feel free to submit pull requests ~~or open issues.~~
 
+
+--- 
+
+### Thanks:
+<a href="https://www.flaticon.com/free-icons/judge" title="judge icons">Judge icons created by Freepik - Flaticon</a>

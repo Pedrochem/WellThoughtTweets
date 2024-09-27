@@ -101,3 +101,7 @@ button:hover:enabled {
 #pauseResume:hover:enabled {
   background-color: #E68A00;
 }
+
+#save {
+  margin-bottom: 10px;
+}

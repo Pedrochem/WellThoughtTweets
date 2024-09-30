@@ -1,3 +1,4 @@
+//TODO: Review
 function addRankingToTweet(tweetElement, ranking) {
     const actionBar = tweetElement.querySelector('div[role="group"]');
     if (!actionBar) return;

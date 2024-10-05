@@ -74,12 +74,10 @@ function addRankingToTweet(tweetElement, ranking) {
 function getTweetId(tweetElement) {
     const tweetLink = tweetElement.querySelector('a[href*="/status/"]');
     if (tweetLink) {
-        // console.log('Full tweet link:', tweetLink.href);
         const urlParts = tweetLink.href.split('/');
         const statusIndex = urlParts.indexOf('status');
         if (statusIndex !== -1 && statusIndex + 1 < urlParts.length) {
             const tweetId = urlParts[statusIndex + 1];
-            // console.log('Extracted tweet ID:', tweetId);
             return tweetId.toString(); // Ensure ID is a string
         }
     }

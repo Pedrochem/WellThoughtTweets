@@ -74,8 +74,6 @@ async function rankTweetsWithGemini(tweets) {
   }
 
   apiCallCount++;
-  // console.log(`Making API call #${apiCallCount}`);
-  // console.log(`Tweets to rank: ${tweets.length}`);
 
   const requestBody = {
     contents: [{
@@ -126,9 +124,6 @@ async function rankTweetsWithGemini(tweets) {
       return isNaN(rating) ? -100 : rating; // Return -100 if the rating is not a number
     });
 
-    // tweets.forEach((tweet, index) => {
-    //   console.log(`Tweet ID: ${tweet.id}, Rating: ${ratings[index]}`);
-    // });
     return tweets.map((tweet, index) => ({ id: tweet.id.toString(), rating: ratings[index] })); // Ensure ID is a string
 
   } catch (error) {

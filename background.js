@@ -14,7 +14,6 @@ let isPaused = false;
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'updateApiKey') {
     GEMINI_API_KEY = request.apiKey;
-    console.log('API key updated:', GEMINI_API_KEY); // Log the full API key
     sendResponse({ status: 'API key updated' });
     return true;
   }
@@ -32,7 +31,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === 'togglePause') {
     isPaused = request.isPaused;
-    console.log('Ranking process ' + (isPaused ? 'paused' : 'resumed'));
     if (!isPaused) {
       processTweets(); // Resume processing if there are pending tweets
     }
@@ -44,7 +42,6 @@ async function processTweets() {
   if (isPaused || processingTweets || (pendingTweets.length === 0 && unrankedTweets.length === 0)) return;
 
   if (!GEMINI_API_KEY) {
-    console.log('API key not set. Skipping tweet processing.');
     return;
   }
 
@@ -73,14 +70,12 @@ async function processTweets() {
 
 async function rankTweetsWithGemini(tweets) {
   if (!GEMINI_API_KEY) {
-    console.log('API key not set. Cannot rank tweets.');
     return tweets.map(tweet => ({ id: tweet.id, rating: null }));
   }
 
   apiCallCount++;
-  console.log(`Making API call #${apiCallCount}`);
-  console.log(`Tweets to rank: ${tweets.length}`);
-  console.log('Using API key:', GEMINI_API_KEY); // Log the full API key
+  // console.log(`Making API call #${apiCallCount}`);
+  // console.log(`Tweets to rank: ${tweets.length}`);
 
   const requestBody = {
     contents: [{
@@ -90,7 +85,6 @@ async function rankTweetsWithGemini(tweets) {
     }]
   };
 
-  console.log('API Request:', JSON.stringify(requestBody, null, 2));
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -101,7 +95,6 @@ async function rankTweetsWithGemini(tweets) {
       body: JSON.stringify(requestBody)
     });
 
-    console.log(`API Response Status: ${response.status} ${response.statusText}`);
 
     if (response.status === 429) {
       console.warn('API quota reached. Retrying in 5 seconds.');
@@ -119,7 +112,6 @@ async function rankTweetsWithGemini(tweets) {
     }
 
     const data = await response.json();
-    console.log('API Response:', JSON.stringify(data, null, 2));
 
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
       // API call returned unexpected data structure (Unsafe)
@@ -134,9 +126,9 @@ async function rankTweetsWithGemini(tweets) {
       return isNaN(rating) ? -100 : rating; // Return -100 if the rating is not a number
     });
 
-    tweets.forEach((tweet, index) => {
-      console.log(`Tweet ID: ${tweet.id}, Rating: ${ratings[index]}`);
-    });
+    // tweets.forEach((tweet, index) => {
+    //   console.log(`Tweet ID: ${tweet.id}, Rating: ${ratings[index]}`);
+    // });
     return tweets.map((tweet, index) => ({ id: tweet.id.toString(), rating: ratings[index] })); // Ensure ID is a string
 
   } catch (error) {
@@ -156,17 +148,11 @@ function scheduleRetry() {
   }, 5000);
 }
 
-console.log('Tweet Thought Ranker background script loaded. Initial API call count: 0');
 
 // Initialize the API key from storage when the script loads
 chrome.storage.sync.get(['apiKey', 'isPaused'], (data) => {
   if (data.apiKey) {
     GEMINI_API_KEY = data.apiKey;
-    console.log('API key loaded from storage');
-  } else {
-    console.log('No API key found in storage');
-  }
-  
+  } 
   isPaused = data.isPaused || false;
-  console.log('Ranking process is ' + (isPaused ? 'paused' : 'active'));
 });

@@ -18,22 +18,18 @@ saveButton.addEventListener('click', () => {
   const apiKey = apiKeyInput.value;
   const hideLowRankTweets = hideLowRankTweetsSelect.value;
   const colorfulRanks = colorfulRanksCheckbox.checked;
-  console.log('Saving settings:', { apiKey, hideLowRankTweets, colorfulRanks });
   chrome.storage.sync.set({ apiKey: apiKey, hideLowRankTweets: hideLowRankTweets, colorfulRanks: colorfulRanks }, () => {
-    console.log('Settings saved');
     // Send a message to the background script to update the API key
-    chrome.runtime.sendMessage({ action: 'updateApiKey', apiKey: apiKey }, (response) => {
-      console.log(response.status);
-    });
-    disableSaveButton();
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.reload(tabs[0].id);
+    chrome.runtime.sendMessage({ action: 'updateApiKey', apiKey: apiKey }, () => {
+      disableSaveButton();
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.reload(tabs[0].id);
+      });
     });
   });
 });
 
 chrome.storage.sync.get(['apiKey', 'hideLowRankTweets', 'colorfulRanks', 'isPaused'], (data) => {
-  console.log('Retrieved settings:', data);
   if (data.apiKey) {
     apiKeyInput.value = data.apiKey;
   }

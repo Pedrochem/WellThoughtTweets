@@ -74,37 +74,32 @@ function addRankingToTweet(tweetElement, ranking) {
 function getTweetId(tweetElement) {
     const tweetLink = tweetElement.querySelector('a[href*="/status/"]');
     if (tweetLink) {
-        console.log('Full tweet link:', tweetLink.href);
+        // console.log('Full tweet link:', tweetLink.href);
         const urlParts = tweetLink.href.split('/');
         const statusIndex = urlParts.indexOf('status');
         if (statusIndex !== -1 && statusIndex + 1 < urlParts.length) {
             const tweetId = urlParts[statusIndex + 1];
-            console.log('Extracted tweet ID:', tweetId);
+            // console.log('Extracted tweet ID:', tweetId);
             return tweetId.toString(); // Ensure ID is a string
         }
     }
-    console.log('No valid tweet ID found');
     return null;
 }
 
 function processTweets() {
     const tweets = document.querySelectorAll('article[data-testid="tweet"]:not([data-ranked]):not([data-ranked="pending"]):not([data-testid*="reply"])');
     const tweetsToRank = [];
-    console.log('Tweets selected for ranking:', tweets);
 
     tweets.forEach(tweet => {
         const tweetText = tweet.querySelector('div[data-testid="tweetText"]')?.textContent;
         const tweetId = getTweetId(tweet);
-        console.log('Processing tweet:', { tweetText, tweetId });
         if (tweetId) {
             const storedRanking = localStorage.getItem(`tweet-ranking-${tweetId}`);
             if (storedRanking !== null && parseInt(storedRanking) > 0 && parseInt(storedRanking) <= 10) {
                 addRankingToTweet(tweet, parseInt(storedRanking));
-                console.log('Tweet selected already has rank!', tweet, storedRanking, 'FULL-ID:', tweetId);
                 tweet.setAttribute('data-ranked', 'true');
             } else if (hasEmptyText(tweetText, tweetId)) {
                 addRankingToTweet(tweet, 0);
-                console.log('Tweet is emoji only, assigned rank 0!', tweet, 'FULL-ID:', tweetId);
                 tweet.setAttribute('data-ranked', 'true');
             } else if (tweetText) {
                 tweetsToRank.push({ id: tweetId, text: tweetText });
@@ -112,7 +107,6 @@ function processTweets() {
             } else {
                 // Handle empty tweetText as emoji-only
                 addRankingToTweet(tweet, 0);
-                console.log('Tweet text is empty, treating as emoji only, assigned rank 0!', tweet, 'FULL-ID:', tweetId);
                 tweet.setAttribute('data-ranked', 'true');
             }
         }
@@ -124,9 +118,7 @@ function processTweets() {
 }
 
 function hasEmptyText(text, id) {
-    console.log('Checking if text is emoji only:', text);
     if (!text) {
-        console.log('Teweet id:',id, ' has empty text');
         return true;
     }
     return false;
@@ -134,11 +126,7 @@ function hasEmptyText(text, id) {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'tweetRatings') {
-        console.log('Received tweet ratings:', message.ratings);
-
         const tweets = document.querySelectorAll('article[data-testid="tweet"]');
-        console.log('Current tweets:', tweets);
-
         const tweetMap = new Map();
         tweets.forEach(tweet => {
             const tweetId = getTweetId(tweet);
@@ -146,7 +134,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 tweetMap.set(tweetId, tweet);
             }
         });
-        console.log('Current tweets id maps:', tweetMap);
 
         message.ratings.forEach(({ id, rating }) => {
             const tweet = tweetMap.get(id.toString()); // Ensure ID is a string
@@ -166,9 +153,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     tweet.removeAttribute('data-ranked'); // Remove the data-ranked attribute to allow reprocessing
                     localStorage.removeItem(`tweet-ranking-${id.toString()}`); // Remove any stored ranking
                 }
-            } else {
-                console.warn(`Warning: Received rating for tweet ID ${id}, but couldn't find matching tweet element.`);
-            }
+            } 
         });
     }
 });
@@ -197,7 +182,7 @@ const observer = new MutationObserver((mutations) => {
 
 observer.observe(document.body, { childList: true, subtree: true });
 
-console.log('Tweet Thought Ranker content script loaded');
+
 
 function getRankColor(ranking, colorfulRanks) {
   if (!colorfulRanks) {

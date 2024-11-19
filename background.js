@@ -70,10 +70,12 @@ async function processTweets() {
 
 async function rankTweetsWithGemini(tweets) {
   if (!GEMINI_API_KEY) {
+    console.log('API key not set.');
     return tweets.map(tweet => ({ id: tweet.id, rating: null }));
   }
 
   apiCallCount++;
+  console.log(`Making API call #${apiCallCount} | Tweets to rank: ${tweets.length}`);
 
   const requestBody = {
     contents: [{
@@ -93,6 +95,13 @@ async function rankTweetsWithGemini(tweets) {
       body: JSON.stringify(requestBody)
     });
 
+    console.log('API Request:', JSON.stringify(requestBody, null, 2));
+
+    // Response status codes:
+    // 200: Success
+    // 429: Quota reached
+    // 503: Model Overloaded
+
 
     if (response.status === 429) {
       console.warn('API quota reached. Retrying in 5 seconds.');
@@ -105,7 +114,7 @@ async function rankTweetsWithGemini(tweets) {
       // Error response
       console.error(`API call #${apiCallCount} failed with status: ${response.status}`);
       const errorText = await response.text();
-      console.error('Error response:', errorText); // Log the full error response
+      console.error('Error response:', errorText);
       return tweets.map(tweet => ({ id: tweet.id, rating: -10})); // Return -10 if the response is not valid
     }
 
@@ -124,6 +133,9 @@ async function rankTweetsWithGemini(tweets) {
       return isNaN(rating) ? -100 : rating; // Return -100 if the rating is not a number
     });
 
+    tweets.forEach((tweet, index) => {
+      console.log(`Tweet ID: ${tweet.id}, Rating: ${ratings[index]}`);
+    });
     return tweets.map((tweet, index) => ({ id: tweet.id.toString(), rating: ratings[index] })); // Ensure ID is a string
 
   } catch (error) {

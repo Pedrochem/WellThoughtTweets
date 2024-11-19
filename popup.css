@@ -105,3 +105,238 @@ button:hover:enabled {
 #save {
   margin-bottom: 10px;
 }
+
+.criteria-container {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.criteria-input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 8px;
+  border: 1px solid #ccd6dd;
+  border-radius: 4px;
+}
+
+h2 {
+  color: #1DA1F2;
+  font-size: 16px;
+  margin: 15px 0 10px 0;
+}
+
+.criteria-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+}
+
+.criteria-item:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
+}
+
+.criteria-item input[type="text"] {
+  flex-grow: 1;
+  margin-bottom: 0;
+  min-width: 0;
+  font-size: 14px;
+  border: 1px solid #e1e8ed;
+  transition: border-color 0.2s ease;
+  padding: 10px 12px;
+}
+
+.criteria-item input[type="text"]:focus {
+  border-color: #1DA1F2;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(29, 161, 242, 0.1);
+}
+
+.weight-control {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  justify-content: center;
+  height: 100%;
+  position: relative;
+  margin-top: -8px;
+}
+
+.weight-label {
+  position: absolute;
+  top: -10px;
+  left: 2px;
+  color: #657786;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+}
+
+.weight-value {
+  position: absolute;
+  top: -12px;
+  right: 2px;
+  color: #1DA1F2;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.slider-container {
+  position: relative;
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+}
+
+.weight-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #1DA1F2, #74c7ff);
+  outline: none;
+  transition: all 0.2s;
+  margin: auto 0;
+}
+
+.weight-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  border: 2px solid #1DA1F2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.2s;
+}
+
+.weight-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  border: 2px solid #1DA1F2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.2s;
+}
+
+.weight-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(29, 161, 242, 0.3);
+}
+
+.weight-slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(29, 161, 242, 0.3);
+}
+
+.criteria-button.delete {
+  padding: 8px;
+  color: #657786;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s;
+  border-radius: 50%;
+}
+
+.criteria-button.delete:hover {
+  opacity: 1;
+  background-color: #ffeef2;
+  color: #e0245e;
+}
+
+.criteria-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.criteria-button {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  width: auto;  /* Override the default button width */
+}
+
+.criteria-button i {
+  font-size: 14px;
+  color: #657786;
+}
+
+.criteria-button:hover {
+  opacity: 1;
+}
+
+.secondary-button {
+  background-color: transparent;
+  border: 1px dashed #1DA1F2;
+  color: #1DA1F2;
+}
+
+.criteria-help {
+  background: #f8f9fa;
+  border-left: 3px solid #1DA1F2;
+  padding: 12px;
+  border-radius: 0 8px 8px 0;
+  margin: 16px 0;
+}
+
+.drag-handle {
+  cursor: move;
+  color: #657786;
+  padding: 0 4px;
+}
+
+.info-icon {
+  display: none; /* Remove the circular icon */
+}
+
+#add-criteria {
+  width: 100%;
+  padding: 12px;
+  border: 2px dashed #ccd6dd;
+  background: transparent;
+  color: #657786;
+  border-radius: 8px;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+
+#add-criteria:hover {
+  border-color: #1DA1F2;
+  color: #1DA1F2;
+  background: rgba(29, 161, 242, 0.05);
+}
+
+#add-criteria i {
+  margin-right: 8px;
+  font-size: 12px;
+}
+
+/* Remove the old span styling since we're using Font Awesome icon now */
+#add-criteria span {
+  display: none;
+}
+
+/* Update the criteria help text */
+.criteria-help span {
+  color: #657786;
+  font-size: 12px;
+}

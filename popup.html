@@ -2,13 +2,30 @@
 <html>
 <head>
   <title>Tweet Thought Ranker Settings</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" type="text/css" href="popup.css">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>Settings</h1>
     <label for="apiKey">Google AI Studio API Key: <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link">(Get your API key)</a></label>
     <input type="text" id="apiKey" placeholder="Enter your API key" />
+    
+    <h2>Ranking Criteria</h2>
+    <div class="criteria-container">
+      <div id="criteria-list">
+        <!-- Criteria items will be added here dynamically -->
+      </div>
+      <button id="add-criteria" class="secondary-button">
+        <i class="fas fa-plus"></i> Add New Criterion
+      </button>
+    </div>
+    <div class="criteria-help">
+      <i class="info-icon">i</i>
+      <span>Criteria are used to evaluate tweets. Higher weights mean more importance in the final score.</span>
+    </div>
+
     <label for="hideLowRankTweets">Hide tweets with rank equal to or below:</label>
     <select id="hideLowRankTweets" style="visibility: hidden;">
       <option value="0">Do not hide any tweets</option>

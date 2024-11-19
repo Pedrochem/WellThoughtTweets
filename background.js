@@ -9,12 +9,16 @@ let currentTabId = null;
 let retryTimeout = null;
 let processedTweetIds = new Set();
 let isPaused = false;
+let currentCriteria = ['thoughtful', 'creative', 'unique', 'funny']; // Default criteria
 
 // Listen for messages from the popup to update the API key
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'updateApiKey') {
     GEMINI_API_KEY = request.apiKey;
-    sendResponse({ status: 'API key updated' });
+    if (request.criteria) {
+      currentCriteria = request.criteria;
+    }
+    sendResponse({ status: 'API key and criteria updated' });
     return true;
   }
 
@@ -77,14 +81,17 @@ async function rankTweetsWithGemini(tweets) {
   apiCallCount++;
   console.log(`Making API call #${apiCallCount} | Tweets to rank: ${tweets.length}`);
 
+  const criteriaText = currentCriteria.length > 0 
+    ? `You should rank tweets based on the following criteria: ${currentCriteria.join(', ')}. `
+    : 'You should rank tweets based on how well thought and how well argued out they are. ';
+
   const requestBody = {
     contents: [{
       parts: [{
-        text: `You are a professional tweet rater with great philsophical perspectives. You should rank tweets on a scale of 1-10 based on how well thought and how well argued out they are. You should value aspects of a post such as creativity, uniqueness, reflectiveness, consciousness, thoughtfulness, deep meaning, and intelligence. Respond with only the numeric ratings, separated by commas.\n\n${tweets.map((tweet, index) => `Tweet ${index + 1}: "${tweet.text}"`).join('\n\n')}`
+        text: `You are a professional tweet rater with great philosophical perspectives. ${criteriaText}Rank tweets on a scale of 1-10. Value aspects such as depth of meaning and intelligence. Respond with only the numeric ratings, separated by commas.\n\n${tweets.map((tweet, index) => `Tweet ${index + 1}: "${tweet.text}"`).join('\n\n')}`
       }]
     }]
   };
-
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -157,9 +164,12 @@ function scheduleRetry() {
 
 
 // Initialize the API key from storage when the script loads
-chrome.storage.sync.get(['apiKey', 'isPaused'], (data) => {
+chrome.storage.sync.get(['apiKey', 'isPaused', 'rankingCriteria'], (data) => {
   if (data.apiKey) {
     GEMINI_API_KEY = data.apiKey;
-  } 
+  }
+  if (data.rankingCriteria) {
+    currentCriteria = data.rankingCriteria;
+  }
   isPaused = data.isPaused || false;
 });

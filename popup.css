@@ -345,3 +345,39 @@ h2 {
   width: 32px; /* Same width as delete button */
   height: 32px; /* Same height as delete button */
 }
+
+/* Update the inactive criteria styles */
+.criteria-item[data-weight="0"] {
+  opacity: 0.7;
+  background: #f8f9fa;
+  border: 1px solid #e1e8ed;
+  transition: all 0.2s ease;
+}
+
+.criteria-item[data-weight="0"]:hover {
+  opacity: 0.8;
+}
+
+/* Add styles for text input when weight is 0 */
+.criteria-item[data-weight="0"] input[type="text"] {
+  color: #657786;
+  font-style: italic;
+}
+
+.criteria-item[data-weight="0"] .weight-slider {
+  background: linear-gradient(to right, #ccd6dd, #e1e8ed);
+}
+
+.criteria-item[data-weight="0"] .weight-slider::-webkit-slider-thumb {
+  border-color: #657786;
+  background: #f8f9fa;
+}
+
+.criteria-item[data-weight="0"] .weight-slider::-moz-range-thumb {
+  border-color: #657786;
+  background: #f8f9fa;
+}
+
+.criteria-item[data-weight="0"] .weight-value {
+  color: #657786;
+}

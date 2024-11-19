@@ -43,37 +43,40 @@ class CriteriaManager {
     });
   }
 
-  createCriteriaItem(criterion = { text: 'Enter a criterion', weight: 0 }, isFirst = false) {
+  createCriteriaItem(criterion = { text: 'Thoughtfulness', weight: 1 }, isFirst = false) {
     const item = document.createElement('div');
     item.className = 'criteria-item';
+    item.setAttribute('data-weight', criterion.weight || 1);
     item.innerHTML = `
       <input type="text" 
              class="criteria-input" 
-             placeholder="Enter a criterion" 
+             placeholder="${isFirst ? 'Enter main criterion' : 'Enter criterion'}" 
              value="${criterion.text}"
              required>
       <div class="weight-control">
         <div class="slider-container">
           <label class="weight-label">Weight</label>
-          <span class="weight-value">${criterion.weight || 0}</span>
+          <span class="weight-value">${criterion.weight || 1}</span>
           <input type="range" 
                  class="weight-slider" 
                  min="0" 
                  max="5" 
-                 value="${criterion.weight || 0}" 
+                 value="${criterion.weight || 1}" 
                  step="1">
         </div>
       </div>
-      ${!isFirst ? `
-        <button class="criteria-button delete" title="Remove">
-          <i class="fas fa-times"></i>
-        </button>
-      ` : `
-        <div class="criteria-button-placeholder"></div>
-      `}
+      <div class="criteria-button-placeholder" style="width: 40px"></div>
     `;
 
     const input = item.querySelector('.criteria-input');
+    
+    input.addEventListener('blur', (e) => {
+      if (!isFirst && e.target.value.trim() === '') {
+        item.remove();
+        this.checkForChanges();
+      }
+    });
+
     input.addEventListener('input', (e) => {
       if (e.target.value.trim() === '') {
         e.target.classList.add('invalid');
@@ -87,7 +90,9 @@ class CriteriaManager {
     const weightValue = item.querySelector('.weight-value');
     
     slider.addEventListener('input', (e) => {
-      weightValue.textContent = e.target.value;
+      const weight = e.target.value;
+      weightValue.textContent = weight;
+      item.setAttribute('data-weight', weight);
       this.checkForChanges();
     });
 
@@ -96,7 +101,10 @@ class CriteriaManager {
 
   setupEventListeners() {
     this.addButton.addEventListener('click', () => {
-      this.addCriterion();
+      const item = this.createCriteriaItem({ text: '', weight: 0 }, false);
+      this.criteriaList.appendChild(item);
+      const input = item.querySelector('.criteria-input');
+      input.focus();
       this.checkForChanges();
     });
     
@@ -141,10 +149,7 @@ class CriteriaManager {
   loadCriteria() {
     chrome.storage.sync.get(['rankingCriteria'], (data) => {
       const defaultCriteria = [
-        { text: 'Thoughtfulness', weight: 0 },
-        { text: 'Creativity', weight: 0 },
-        { text: 'Uniqueness', weight: 0 },
-        { text: 'Humor', weight: 0 }
+        { text: 'Thoughtfulness', weight: 1 }
       ];
       
       this.criteriaList.innerHTML = '';
@@ -155,8 +160,8 @@ class CriteriaManager {
 
       criteria.forEach((criterion, index) => {
         const validCriterion = {
-          text: criterion.text || 'Thoughtfulness',
-          weight: Number.isInteger(criterion.weight) ? criterion.weight : 0
+          text: criterion.text || (index === 0 ? 'Thoughtfulness' : ''),
+          weight: Number.isInteger(criterion.weight) ? criterion.weight : 1
         };
         this.criteriaList.appendChild(this.createCriteriaItem(validCriterion, index === 0));
       });
@@ -170,9 +175,20 @@ class CriteriaManager {
     const hasChanges = this.hasStateChanged();
     const hasEmptyCriteria = Array.from(this.criteriaList.querySelectorAll('.criteria-input'))
       .some(input => input.value.trim() === '');
+    
+    const hasActiveCriterion = Array.from(this.criteriaList.querySelectorAll('.weight-slider'))
+      .some(slider => parseInt(slider.value) > 0);
 
-    saveButton.disabled = !hasChanges || hasEmptyCriteria;
-    saveButton.textContent = hasEmptyCriteria ? 'Fill all criteria' : (hasChanges ? 'Save' : 'Saved');
+    const isValid = !hasEmptyCriteria && hasActiveCriterion;
+    saveButton.disabled = !hasChanges || !isValid;
+    
+    if (hasEmptyCriteria) {
+      saveButton.textContent = 'Fill all criteria';
+    } else if (!hasActiveCriterion) {
+      saveButton.textContent = 'At least one active criterion needed';
+    } else {
+      saveButton.textContent = hasChanges ? 'Save' : 'Saved';
+    }
   }
 }
 

@@ -182,7 +182,7 @@ h2 {
 
 .weight-value {
   position: absolute;
-  top: -12px;
+  top: -13px;
   right: 2px;
   color: #1DA1F2;
   font-weight: 600;
@@ -339,4 +339,9 @@ h2 {
 .criteria-help span {
   color: #657786;
   font-size: 12px;
+}
+
+.criteria-button-placeholder {
+  width: 32px; /* Same width as delete button */
+  height: 32px; /* Same height as delete button */
 }

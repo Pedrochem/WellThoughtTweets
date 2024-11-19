@@ -9,7 +9,12 @@ let currentTabId = null;
 let retryTimeout = null;
 let processedTweetIds = new Set();
 let isPaused = false;
-let currentCriteria = ['thoughtful', 'creative', 'unique', 'funny']; // Default criteria
+let currentCriteria = [
+  { text: 'thoughtfulness', weight: 0 },
+  { text: 'creativity', weight: 0 },
+  { text: 'uniqueness', weight: 0 },
+  { text: 'humor', weight: 0 }
+]; // Default criteria
 
 // Listen for messages from the popup to update the API key
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -82,7 +87,7 @@ async function rankTweetsWithGemini(tweets) {
   console.log(`Making API call #${apiCallCount} | Tweets to rank: ${tweets.length}`);
 
   const criteriaText = currentCriteria.length > 0 
-    ? `You should rank tweets based on the following criteria: ${currentCriteria.join(', ')}. `
+    ? `You should rank tweets based on the following criteria: ${currentCriteria.map(c => c.text).join(', ')}. Higher weighted criteria (${currentCriteria.map(c => `${c.text}:${c.weight}`).join(', ')}) should have more impact on the final score. `
     : 'You should rank tweets based on how well thought and how well argued out they are. ';
 
   const requestBody = {
@@ -168,8 +173,15 @@ chrome.storage.sync.get(['apiKey', 'isPaused', 'rankingCriteria'], (data) => {
   if (data.apiKey) {
     GEMINI_API_KEY = data.apiKey;
   }
-  if (data.rankingCriteria) {
+  if (data.rankingCriteria && Array.isArray(data.rankingCriteria)) {
     currentCriteria = data.rankingCriteria;
+  } else {
+    currentCriteria = [
+      { text: 'thoughtfulness', weight: 0 },
+      { text: 'creativity', weight: 0 },
+      { text: 'uniqueness', weight: 0 },
+      { text: 'humor', weight: 0 }
+    ];
   }
   isPaused = data.isPaused || false;
 });

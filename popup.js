@@ -8,55 +8,115 @@ class CriteriaManager {
   constructor() {
     this.criteriaList = document.getElementById('criteria-list');
     this.addButton = document.getElementById('add-criteria');
+    this.originalState = null;
     this.setupEventListeners();
     this.loadCriteria();
   }
 
-  createCriteriaItem(criterion = { text: '', weight: 3 }) {
+  getCurrentState() {
+    return {
+      apiKey: apiKeyInput.value,
+      hideLowRankTweets: hideLowRankTweetsSelect.value,
+      colorfulRanks: colorfulRanksCheckbox.checked,
+      criteria: this.getCriteria()
+    };
+  }
+
+  hasStateChanged() {
+    if (!this.originalState) return false;
+
+    const currentState = this.getCurrentState();
+
+    if (currentState.apiKey !== this.originalState.apiKey ||
+        currentState.hideLowRankTweets !== this.originalState.hideLowRankTweets ||
+        currentState.colorfulRanks !== this.originalState.colorfulRanks) {
+      return true;
+    }
+
+    if (currentState.criteria.length !== this.originalState.criteria.length) {
+      return true;
+    }
+
+    return currentState.criteria.some((criterion, index) => {
+      const original = this.originalState.criteria[index];
+      return criterion.text !== original.text || criterion.weight !== original.weight;
+    });
+  }
+
+  createCriteriaItem(criterion = { text: 'Enter a criterion', weight: 0 }, isFirst = false) {
     const item = document.createElement('div');
     item.className = 'criteria-item';
     item.innerHTML = `
-      <input type="text" class="criteria-input" placeholder="Enter criterion" value="${criterion.text}">
+      <input type="text" 
+             class="criteria-input" 
+             placeholder="Enter a criterion" 
+             value="${criterion.text}"
+             required>
       <div class="weight-control">
         <div class="slider-container">
           <label class="weight-label">Weight</label>
-          <span class="weight-value">${criterion.weight}</span>
+          <span class="weight-value">${criterion.weight || 0}</span>
           <input type="range" 
                  class="weight-slider" 
-                 min="1" 
+                 min="0" 
                  max="5" 
-                 value="${criterion.weight}" 
+                 value="${criterion.weight || 0}" 
                  step="1">
         </div>
       </div>
-      <button class="criteria-button delete" title="Remove">
-        <i class="fas fa-times"></i>
-      </button>
+      ${!isFirst ? `
+        <button class="criteria-button delete" title="Remove">
+          <i class="fas fa-times"></i>
+        </button>
+      ` : `
+        <div class="criteria-button-placeholder"></div>
+      `}
     `;
 
-    // Add slider event handler
+    const input = item.querySelector('.criteria-input');
+    input.addEventListener('input', (e) => {
+      if (e.target.value.trim() === '') {
+        e.target.classList.add('invalid');
+      } else {
+        e.target.classList.remove('invalid');
+      }
+      this.checkForChanges();
+    });
+
     const slider = item.querySelector('.weight-slider');
     const weightValue = item.querySelector('.weight-value');
     
     slider.addEventListener('input', (e) => {
       weightValue.textContent = e.target.value;
-      this.enableSaveButton();
+      this.checkForChanges();
     });
 
     return item;
   }
 
   setupEventListeners() {
-    this.addButton.addEventListener('click', () => this.addCriterion());
+    this.addButton.addEventListener('click', () => {
+      this.addCriterion();
+      this.checkForChanges();
+    });
     
-    // Delegate events for criteria items
     this.criteriaList.addEventListener('click', (e) => {
       const item = e.target.closest('.criteria-item');
       if (!item) return;
 
       if (e.target.closest('.delete')) {
-        item.remove();
-        this.enableSaveButton();
+        if (this.criteriaList.children.length > 1) {
+          item.remove();
+          this.checkForChanges();
+        } else {
+          const input = item.querySelector('.criteria-input');
+          input.value = 'Thoughtfulness';
+          const slider = item.querySelector('.weight-slider');
+          slider.value = 0;
+          const weightValue = item.querySelector('.weight-value');
+          weightValue.textContent = '0';
+          this.checkForChanges();
+        }
       }
     });
   }
@@ -64,53 +124,64 @@ class CriteriaManager {
   addCriterion() {
     const item = this.createCriteriaItem();
     this.criteriaList.appendChild(item);
-    item.querySelector('input[type="text"]').focus();
-    this.enableSaveButton();
+    item.querySelector('.criteria-input').focus();
+    this.checkForChanges();
   }
 
   getCriteria() {
-    return Array.from(this.criteriaList.children).map(item => {
-      const text = item.querySelector('.criteria-input').value.trim();
-      const weight = parseInt(item.querySelector('.weight-slider').value);
-      return { text, weight };
-    }).filter(c => c.text !== '');
+    return Array.from(this.criteriaList.children)
+      .map(item => {
+        const text = item.querySelector('.criteria-input').value.trim();
+        const weight = parseInt(item.querySelector('.weight-slider').value);
+        return { text, weight };
+      })
+      .filter(c => c.text !== '');
   }
 
   loadCriteria() {
     chrome.storage.sync.get(['rankingCriteria'], (data) => {
-      const criteria = data.rankingCriteria || [
-        { text: 'thoughtful', weight: 5 },
-        { text: 'creative', weight: 4 },
-        { text: 'unique', weight: 3 },
-        { text: 'funny', weight: 2 }
+      const defaultCriteria = [
+        { text: 'Thoughtfulness', weight: 0 },
+        { text: 'Creativity', weight: 0 },
+        { text: 'Uniqueness', weight: 0 },
+        { text: 'Humor', weight: 0 }
       ];
       
-      criteria.forEach(criterion => {
-        this.criteriaList.appendChild(this.createCriteriaItem(criterion));
+      this.criteriaList.innerHTML = '';
+      
+      const criteria = Array.isArray(data.rankingCriteria) && data.rankingCriteria.length > 0 
+        ? data.rankingCriteria 
+        : defaultCriteria;
+
+      criteria.forEach((criterion, index) => {
+        const validCriterion = {
+          text: criterion.text || 'Thoughtfulness',
+          weight: Number.isInteger(criterion.weight) ? criterion.weight : 0
+        };
+        this.criteriaList.appendChild(this.createCriteriaItem(validCriterion, index === 0));
       });
+
+      this.originalState = this.getCurrentState();
     });
+  }
+
+  checkForChanges() {
+    const saveButton = document.getElementById('save');
+    const hasChanges = this.hasStateChanged();
+    const hasEmptyCriteria = Array.from(this.criteriaList.querySelectorAll('.criteria-input'))
+      .some(input => input.value.trim() === '');
+
+    saveButton.disabled = !hasChanges || hasEmptyCriteria;
+    saveButton.textContent = hasEmptyCriteria ? 'Fill all criteria' : (hasChanges ? 'Save' : 'Saved');
   }
 }
 
-// Initialize the criteria manager
 const criteriaManager = new CriteriaManager();
-
-function enableSaveButton() {
-  saveButton.disabled = false;
-  saveButton.textContent = 'Save';
-}
-
-function disableSaveButton() {
-  saveButton.disabled = true;
-  saveButton.textContent = 'Saved';
-}
 
 saveButton.addEventListener('click', () => {
   const apiKey = apiKeyInput.value;
   const hideLowRankTweets = hideLowRankTweetsSelect.value;
   const colorfulRanks = colorfulRanksCheckbox.checked;
-  
-  // Get criteria values and filter out empty ones
   const criteria = criteriaManager.getCriteria();
 
   chrome.storage.sync.set({
@@ -124,7 +195,8 @@ saveButton.addEventListener('click', () => {
       apiKey: apiKey,
       criteria: criteria
     }, () => {
-      disableSaveButton();
+      criteriaManager.originalState = criteriaManager.getCurrentState();
+      criteriaManager.checkForChanges();
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         chrome.tabs.reload(tabs[0].id);
       });
@@ -132,8 +204,12 @@ saveButton.addEventListener('click', () => {
   });
 });
 
+apiKeyInput.addEventListener('input', () => criteriaManager.checkForChanges());
+hideLowRankTweetsSelect.addEventListener('change', () => criteriaManager.checkForChanges());
+colorfulRanksCheckbox.addEventListener('change', () => criteriaManager.checkForChanges());
+
 chrome.storage.sync.get(
-  ['apiKey', 'hideLowRankTweets', 'colorfulRanks', 'isPaused', 'rankingCriteria'],
+  ['apiKey', 'hideLowRankTweets', 'colorfulRanks', 'isPaused'],
   (data) => {
     if (data.apiKey) {
       apiKeyInput.value = data.apiKey;
@@ -141,17 +217,16 @@ chrome.storage.sync.get(
     if (data.hideLowRankTweets !== undefined) {
       hideLowRankTweetsSelect.value = data.hideLowRankTweets;
     } else {
-      // Set a default value if not found in storage
       hideLowRankTweetsSelect.value = '1';
     }
     if (data.colorfulRanks !== undefined) {
       colorfulRanksCheckbox.checked = data.colorfulRanks;
     } else {
-      // Set default to true if not found in storage
       colorfulRanksCheckbox.checked = true;
     }
-    // Show the select element after setting the value
+    
     hideLowRankTweetsSelect.style.visibility = 'visible';
+    
     if (data.isPaused) {
       pauseResumeButton.textContent = 'Resume Ranking';
       pauseResumeButton.style.backgroundColor = '#4CAF50';
@@ -159,26 +234,8 @@ chrome.storage.sync.get(
       pauseResumeButton.textContent = 'Pause Ranking';
       pauseResumeButton.style.backgroundColor = '#FF9900';
     }
-    disableSaveButton();
-
-    // Set criteria values
-    if (data.rankingCriteria && Array.isArray(data.rankingCriteria)) {
-      data.rankingCriteria.forEach((criterion, index) => {
-        if (criteriaManager.criteriaList.children[index]) {
-          criteriaManager.criteriaList.children[index].querySelector('.criteria-input').value = criterion.text;
-          criteriaManager.criteriaList.children[index].querySelector('input[type="number"]').value = criterion.weight;
-        }
-      });
-    } else {
-      // Set default criteria
-      const defaultCriteria = ['thoughtful', 'creative', 'unique', 'funny'];
-      defaultCriteria.forEach((criterion, index) => {
-        if (criteriaManager.criteriaList.children[index]) {
-          criteriaManager.criteriaList.children[index].querySelector('.criteria-input').value = criterion;
-          criteriaManager.criteriaList.children[index].querySelector('input[type="number"]').value = 5 - index;
-        }
-      });
-    }
+    
+    criteriaManager.checkForChanges();
   }
 );
 

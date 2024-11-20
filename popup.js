@@ -44,10 +44,10 @@ class CriteriaManager {
     });
   }
 
-  createCriteriaItem(criterion = { text: 'Thoughtfulness', weight: 1 }, isFirst = false) {
+  createCriteriaItem(criterion = { text: 'Thoughtfulness', weight: 0 }, isFirst = false) {
     const item = document.createElement('div');
     item.className = 'criteria-item';
-    item.setAttribute('data-weight', criterion.weight || 1);
+    item.setAttribute('data-weight', criterion.weight);
     item.innerHTML = `
       <div class="criteria-input-container">
         <input type="text" 
@@ -59,12 +59,12 @@ class CriteriaManager {
       <div class="weight-control">
         <div class="slider-container">
           <label class="weight-label">Weight</label>
-          <span class="weight-value">${criterion.weight || 1}</span>
+          <span class="weight-value">${criterion.weight}</span>
           <input type="range" 
                  class="weight-slider" 
                  min="0" 
                  max="5" 
-                 value="${criterion.weight || 1}" 
+                 value="${criterion.weight}" 
                  step="1">
         </div>
       </div>
@@ -114,7 +114,7 @@ class CriteriaManager {
 
   setupEventListeners() {
     this.addButton.addEventListener('click', () => {
-      const item = this.createCriteriaItem({ text: '', weight: 0 }, false);
+      const item = this.createCriteriaItem({ text: '', weight: 1 }, false);
       this.criteriaList.appendChild(item);
       const input = item.querySelector('.criteria-input');
       input.focus();
@@ -174,7 +174,7 @@ class CriteriaManager {
       criteria.forEach((criterion, index) => {
         const validCriterion = {
           text: criterion.text || (index === 0 ? 'Thoughtfulness' : ''),
-          weight: Number.isInteger(criterion.weight) ? criterion.weight : 1
+          weight: criterion.weight !== undefined ? criterion.weight : 1
         };
         this.criteriaList.appendChild(this.createCriteriaItem(validCriterion, index === 0));
       });

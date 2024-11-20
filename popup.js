@@ -19,8 +19,8 @@ const MODEL_CONFIGS = {
     linkText: 'Get your OpenAI API key',
     description: 'Please ensure you are using an OpenAI API key for GPT models.'
   },
-  'gpt-4': {
-    name: 'GPT-4',
+  'gpt-4o-mini': {
+    name: 'GPT-4o Mini',
     placeholder: 'Paste your OpenAI API key',
     apiKeyLink: 'https://platform.openai.com/api-keys',
     linkText: 'Get your OpenAI API key',

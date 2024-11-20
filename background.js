@@ -86,17 +86,20 @@ async function rankTweetsWithGemini(tweets) {
   apiCallCount++;
   console.log(`Making API call #${apiCallCount} | Tweets to rank: ${tweets.length}`);
 
-  const criteriaText = currentCriteria.length > 0 
-    ? `You should rank tweets based on the following criteria: ${currentCriteria.map(c => c.text).join(', ')}. Higher weighted criteria (${currentCriteria.map(c => `${c.text}:${c.weight}`).join(', ')}) should have more impact on the final score. `
-    : 'You should rank tweets based on how well thought and how well argued out they are. ';
+  // Filter out criteria with weight 0
+  const activeCriteria = currentCriteria.filter(c => c.weight > 0);
 
+  const criteriaText = `You are a professional tweet rater with great philosophical perspectives. You should rank tweets based on the following criteria (format is criteria: weight): ${activeCriteria.map(c => `${c.text}: ${c.weight}`).join(', ')}. Higher weighted criteria should have more impact on the final score. Rank tweets on a scale of 1-10. Respond with only the numeric ratings, separated by commas.\n\n${tweets.map((tweet, index) => `Tweet ${index + 1}: "${tweet.text}"`).join('\n\n')}`;
+  
   const requestBody = {
     contents: [{
       parts: [{
-        text: `You are a professional tweet rater with great philosophical perspectives. ${criteriaText}Rank tweets on a scale of 1-10. Value aspects such as depth of meaning and intelligence. Respond with only the numeric ratings, separated by commas.\n\n${tweets.map((tweet, index) => `Tweet ${index + 1}: "${tweet.text}"`).join('\n\n')}`
+        text: criteriaText
       }]
     }]
   };
+
+  console.log('API Request:', JSON.stringify(requestBody, null, 2));
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -106,8 +109,6 @@ async function rankTweetsWithGemini(tweets) {
       },
       body: JSON.stringify(requestBody)
     });
-
-    console.log('API Request:', JSON.stringify(requestBody, null, 2));
 
     // Response status codes:
     // 200: Success

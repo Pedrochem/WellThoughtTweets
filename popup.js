@@ -11,7 +11,50 @@ class CriteriaManager {
     this.addButton = document.getElementById('add-criteria');
     this.originalState = null;
     this.setupEventListeners();
-    this.loadCriteria();
+    
+    // Load initial state and criteria
+    this.initializeState();
+  }
+
+  // New method to handle initial state loading
+  initializeState() {
+    chrome.storage.sync.get(
+      ['apiKey', 'hideLowRankTweets', 'colorfulRanks', 'isPaused', 'rankingCriteria'],
+      (data) => {
+        // Set all initial values
+        if (data.apiKey) {
+          apiKeyInput.dataset.fullKey = data.apiKey;
+          apiKeyInput.value = maskApiKey(data.apiKey);
+          toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
+        }
+        
+        hideLowRankTweetsSelect.value = data.hideLowRankTweets || '1';
+        colorfulRanksCheckbox.checked = data.colorfulRanks !== undefined ? data.colorfulRanks : true;
+        
+        // Load criteria
+        const defaultCriteria = [{ text: 'Thoughtfulness', weight: 1 }];
+        const criteria = Array.isArray(data.rankingCriteria) && data.rankingCriteria.length > 0 
+          ? data.rankingCriteria 
+          : defaultCriteria;
+
+        this.criteriaList.innerHTML = '';
+        criteria.forEach((criterion, index) => {
+          const validCriterion = {
+            text: criterion.text || (index === 0 ? 'Thoughtfulness' : ''),
+            weight: criterion.weight !== undefined ? criterion.weight : 1
+          };
+          this.criteriaList.appendChild(this.createCriteriaItem(validCriterion, index === 0));
+        });
+
+        // Set the original state AFTER everything is initialized
+        this.originalState = this.getCurrentState();
+        
+        // Ensure save button is disabled initially
+        const saveButton = document.getElementById('save');
+        saveButton.disabled = true;
+        saveButton.textContent = 'Saved';
+      }
+    );
   }
 
   getCurrentState() {
@@ -159,40 +202,18 @@ class CriteriaManager {
       .filter(c => c.text !== '');
   }
 
-  loadCriteria() {
-    chrome.storage.sync.get(['rankingCriteria'], (data) => {
-      const defaultCriteria = [
-        { text: 'Thoughtfulness', weight: 1 }
-      ];
-      
-      this.criteriaList.innerHTML = '';
-      
-      const criteria = Array.isArray(data.rankingCriteria) && data.rankingCriteria.length > 0 
-        ? data.rankingCriteria 
-        : defaultCriteria;
-
-      criteria.forEach((criterion, index) => {
-        const validCriterion = {
-          text: criterion.text || (index === 0 ? 'Thoughtfulness' : ''),
-          weight: criterion.weight !== undefined ? criterion.weight : 1
-        };
-        this.criteriaList.appendChild(this.createCriteriaItem(validCriterion, index === 0));
-      });
-
-      this.originalState = this.getCurrentState();
-    });
-  }
-
   checkForChanges() {
     const saveButton = document.getElementById('save');
     const hasChanges = this.hasStateChanged();
     const hasEmptyCriteria = Array.from(this.criteriaList.querySelectorAll('.criteria-input'))
       .some(input => input.value.trim() === '');
     
+    // Check if at least one criterion has weight > 0
     const hasActiveCriterion = Array.from(this.criteriaList.querySelectorAll('.weight-slider'))
       .some(slider => parseInt(slider.value) > 0);
 
     const isValid = !hasEmptyCriteria && hasActiveCriterion;
+
     saveButton.disabled = !hasChanges || !isValid;
     
     if (hasEmptyCriteria) {
@@ -216,16 +237,6 @@ function maskApiKey(key) {
   const middlePart = '*'.repeat(middleLength);
   return `${firstPart}${middlePart}${lastPart}`;
 }
-
-// Initialize API key from storage
-chrome.storage.sync.get(['apiKey'], (data) => {
-  if (data.apiKey) {
-    const fullKey = data.apiKey;
-    apiKeyInput.dataset.fullKey = fullKey;
-    apiKeyInput.value = maskApiKey(fullKey);
-    toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
-  }
-});
 
 // Handle API key input
 apiKeyInput.addEventListener('input', (e) => {
@@ -281,40 +292,6 @@ saveButton.addEventListener('click', () => {
 
 hideLowRankTweetsSelect.addEventListener('change', () => criteriaManager.checkForChanges());
 colorfulRanksCheckbox.addEventListener('change', () => criteriaManager.checkForChanges());
-
-chrome.storage.sync.get(
-  ['apiKey', 'hideLowRankTweets', 'colorfulRanks', 'isPaused'],
-  (data) => {
-    if (data.apiKey) {
-      const fullKey = data.apiKey;
-      apiKeyInput.dataset.fullKey = fullKey;
-      apiKeyInput.value = maskApiKey(fullKey);
-      toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
-    }
-    if (data.hideLowRankTweets !== undefined) {
-      hideLowRankTweetsSelect.value = data.hideLowRankTweets;
-    } else {
-      hideLowRankTweetsSelect.value = '1';
-    }
-    if (data.colorfulRanks !== undefined) {
-      colorfulRanksCheckbox.checked = data.colorfulRanks;
-    } else {
-      colorfulRanksCheckbox.checked = true;
-    }
-    
-    hideLowRankTweetsSelect.style.visibility = 'visible';
-    
-    if (data.isPaused) {
-      pauseResumeButton.textContent = 'Resume Ranking';
-      pauseResumeButton.style.backgroundColor = '#4CAF50';
-    } else {
-      pauseResumeButton.textContent = 'Pause Ranking';
-      pauseResumeButton.style.backgroundColor = '#FF9900';
-    }
-    
-    criteriaManager.checkForChanges();
-  }
-);
 
 pauseResumeButton.addEventListener('click', () => {
   chrome.storage.sync.get(['isPaused'], (data) => {

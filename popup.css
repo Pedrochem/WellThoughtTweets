@@ -297,7 +297,7 @@ button:hover:enabled {
   padding: 8px;
   border: 1px solid #e1e8ed;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 15px;
   transition: border-color 0.2s ease;
 }
 

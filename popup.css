@@ -28,10 +28,26 @@ body {
   transform: translateY(-1px);
 }
 
+.title-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  position: relative;
+  width: 100%;
+}
+
+.title-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
 h1 {
   color: #1DA1F2;
-  font-size: 20px;
-  margin-bottom: 16px;
+  font-size: 24px;
+  margin: 0;
   font-weight: 600;
 }
 
@@ -60,7 +76,7 @@ label {
   right: 0;
   top: 2px;
   color: #1DA1F2;
-  font-size: 12px;
+  font-size: 14px;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -68,7 +84,7 @@ label {
 }
 
 .api-key-link i {
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .api-key-input-container {
@@ -243,26 +259,31 @@ button:hover:enabled {
 .criteria-container {
   width: 100%;
   margin-bottom: 15px;
+  padding: 0;
+}
+
+.criteria-input-container {
+  flex: 1 1 180px;
+  min-width: 0;
 }
 
 .criteria-input {
   width: 100%;
-  padding: 8px;
-  margin-bottom: 8px;
-  border: 1px solid #ccd6dd;
-  border-radius: 4px;
 }
 
 .criteria-item {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 12px;
   background: white;
-  padding: 16px;
+  padding: 12px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   transition: all 0.2s ease;
+  width: calc(100% - 24px);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .criteria-item:hover {
@@ -271,13 +292,13 @@ button:hover:enabled {
 }
 
 .criteria-item input[type="text"] {
-  flex-grow: 1;
-  margin-bottom: 0;
-  min-width: 0;
-  font-size: 14px;
+  width: 100%;
+  margin: 0;
+  padding: 8px;
   border: 1px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 14px;
   transition: border-color 0.2s ease;
-  padding: 10px 12px;
 }
 
 .criteria-item input[type="text"]:focus {
@@ -287,14 +308,17 @@ button:hover:enabled {
 }
 
 .weight-control {
+  flex: 0 0 150px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 150px;
   justify-content: center;
   height: 100%;
   position: relative;
   margin-top: -8px;
+  margin-left: auto;
+  padding-right: 8px;
+  margin-left: 16px;
 }
 
 .weight-label {
@@ -476,9 +500,21 @@ button:hover:enabled {
   font-size: 12px;
 }
 
+.criteria-button-container {
+  flex: 0 0 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.criteria-button.delete,
 .criteria-button-placeholder {
-  width: 32px; /* Same width as delete button */
-  height: 32px; /* Same height as delete button */
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Update the inactive criteria styles */
@@ -515,4 +551,8 @@ button:hover:enabled {
 
 .criteria-item[data-weight="0"] .weight-value {
   color: #657786;
+}
+
+#criteria-list {
+  width: 100%;
 }

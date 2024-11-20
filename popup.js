@@ -49,11 +49,13 @@ class CriteriaManager {
     item.className = 'criteria-item';
     item.setAttribute('data-weight', criterion.weight || 1);
     item.innerHTML = `
-      <input type="text" 
-             class="criteria-input" 
-             placeholder="${isFirst ? 'Enter main criterion' : 'Enter criterion'}" 
-             value="${criterion.text}"
-             required>
+      <div class="criteria-input-container">
+        <input type="text" 
+               class="criteria-input" 
+               placeholder="${isFirst ? 'Enter main criterion' : 'Enter criterion'}" 
+               value="${criterion.text}"
+               required>
+      </div>
       <div class="weight-control">
         <div class="slider-container">
           <label class="weight-label">Weight</label>
@@ -66,17 +68,27 @@ class CriteriaManager {
                  step="1">
         </div>
       </div>
-      <div class="criteria-button-placeholder" style="width: 40px"></div>
+      <div class="criteria-button-container">
+        ${!isFirst ? `
+          <button class="criteria-button delete" title="Remove">
+            <i class="fas fa-times"></i>
+          </button>
+        ` : `
+          <div class="criteria-button-placeholder"></div>
+        `}
+      </div>
     `;
 
     const input = item.querySelector('.criteria-input');
     
-    input.addEventListener('blur', (e) => {
-      if (!isFirst && e.target.value.trim() === '') {
-        item.remove();
-        this.checkForChanges();
-      }
-    });
+    if (!isFirst) {
+      input.addEventListener('blur', (e) => {
+        if (e.target.value.trim() === '') {
+          item.remove();
+          this.checkForChanges();
+        }
+      });
+    }
 
     input.addEventListener('input', (e) => {
       if (e.target.value.trim() === '') {
@@ -198,28 +210,60 @@ const criteriaManager = new CriteriaManager();
 function maskApiKey(key) {
   if (!key) return '';
   if (key.length <= 8) return key;
-  const firstPart = key.slice(0, 6);
+  const firstPart = key.slice(0, 4);
   const lastPart = key.slice(-4);
-  const middleLength = Math.min(20, key.length - 10);
+  const middleLength = key.length - 8;
   const middlePart = '*'.repeat(middleLength);
   return `${firstPart}${middlePart}${lastPart}`;
 }
 
+// Initialize API key from storage
+chrome.storage.sync.get(['apiKey'], (data) => {
+  if (data.apiKey) {
+    const fullKey = data.apiKey;
+    apiKeyInput.dataset.fullKey = fullKey;
+    apiKeyInput.value = maskApiKey(fullKey);
+    toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
+  }
+});
+
+// Handle API key input
+apiKeyInput.addEventListener('input', (e) => {
+  const value = e.target.value;
+  e.target.dataset.fullKey = value;
+  criteriaManager.checkForChanges();
+});
+
+// Handle visibility toggle
+toggleApiVisibility.addEventListener('click', () => {
+  const fullKey = apiKeyInput.dataset.fullKey || apiKeyInput.value;
+  const isShowingMasked = apiKeyInput.value.includes('*');
+  
+  if (isShowingMasked) {
+    apiKeyInput.value = fullKey;
+    toggleApiVisibility.innerHTML = '<i class="fas fa-eye-slash"></i>';
+  } else {
+    apiKeyInput.value = maskApiKey(fullKey);
+    toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
+  }
+});
+
+// Update save button handler
 saveButton.addEventListener('click', () => {
-  const apiKey = apiKeyInput.dataset.fullKey || apiKeyInput.value;
+  const fullKey = apiKeyInput.dataset.fullKey || apiKeyInput.value;
   const hideLowRankTweets = hideLowRankTweetsSelect.value;
   const colorfulRanks = colorfulRanksCheckbox.checked;
   const criteria = criteriaManager.getCriteria();
 
   chrome.storage.sync.set({
-    apiKey,
+    apiKey: fullKey,
     hideLowRankTweets,
     colorfulRanks,
     rankingCriteria: criteria
   }, () => {
     chrome.runtime.sendMessage({ 
       action: 'updateApiKey', 
-      apiKey: apiKey,
+      apiKey: fullKey,
       criteria: criteria
     }, () => {
       criteriaManager.originalState = criteriaManager.getCurrentState();
@@ -232,16 +276,6 @@ saveButton.addEventListener('click', () => {
   });
 });
 
-apiKeyInput.addEventListener('input', (e) => {
-  const value = e.target.value;
-  e.target.dataset.fullKey = value;
-  
-  if (toggleApiVisibility.innerHTML.includes('fa-eye')) {
-    e.target.value = maskApiKey(value);
-  }
-  
-  criteriaManager.checkForChanges();
-});
 hideLowRankTweetsSelect.addEventListener('change', () => criteriaManager.checkForChanges());
 colorfulRanksCheckbox.addEventListener('change', () => criteriaManager.checkForChanges());
 
@@ -249,8 +283,9 @@ chrome.storage.sync.get(
   ['apiKey', 'hideLowRankTweets', 'colorfulRanks', 'isPaused'],
   (data) => {
     if (data.apiKey) {
-      apiKeyInput.dataset.fullKey = data.apiKey;
-      apiKeyInput.value = maskApiKey(data.apiKey);
+      const fullKey = data.apiKey;
+      apiKeyInput.dataset.fullKey = fullKey;
+      apiKeyInput.value = maskApiKey(fullKey);
       toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
     }
     if (data.hideLowRankTweets !== undefined) {
@@ -292,19 +327,4 @@ pauseResumeButton.addEventListener('click', () => {
       chrome.runtime.sendMessage({ action: 'togglePause', isPaused: newPausedState });
     });
   });
-});
-
-toggleApiVisibility.addEventListener('click', () => {
-  const fullKey = apiKeyInput.dataset.fullKey || '';
-  const isShowingFullKey = apiKeyInput.value === fullKey;
-  
-  if (isShowingFullKey) {
-    // Switch to masked
-    apiKeyInput.value = maskApiKey(fullKey);
-    toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
-  } else {
-    // Switch to full key
-    apiKeyInput.value = fullKey;
-    toggleApiVisibility.innerHTML = '<i class="fas fa-eye-slash"></i>';
-  }
 });

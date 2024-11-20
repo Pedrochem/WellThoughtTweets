@@ -268,7 +268,10 @@ saveButton.addEventListener('click', () => {
     }, () => {
       criteriaManager.originalState = criteriaManager.getCurrentState();
       criteriaManager.checkForChanges();
+      
+      // Send message to content script to clear localStorage
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'clearRankings' });
         chrome.tabs.reload(tabs[0].id);
         window.close();
       });

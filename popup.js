@@ -3,6 +3,7 @@ const apiKeyInput = document.getElementById('apiKey');
 const hideLowRankTweetsSelect = document.getElementById('hideLowRankTweets');
 const colorfulRanksCheckbox = document.getElementById('colorfulRanks');
 const pauseResumeButton = document.getElementById('pauseResume');
+const toggleApiVisibility = document.querySelector('.toggle-api-visibility');
 
 class CriteriaManager {
   constructor() {
@@ -194,8 +195,18 @@ class CriteriaManager {
 
 const criteriaManager = new CriteriaManager();
 
+function maskApiKey(key) {
+  if (!key) return '';
+  if (key.length <= 8) return key;
+  const firstPart = key.slice(0, 6);
+  const lastPart = key.slice(-4);
+  const middleLength = Math.min(20, key.length - 10);
+  const middlePart = '*'.repeat(middleLength);
+  return `${firstPart}${middlePart}${lastPart}`;
+}
+
 saveButton.addEventListener('click', () => {
-  const apiKey = apiKeyInput.value;
+  const apiKey = apiKeyInput.dataset.fullKey || apiKeyInput.value;
   const hideLowRankTweets = hideLowRankTweetsSelect.value;
   const colorfulRanks = colorfulRanksCheckbox.checked;
   const criteria = criteriaManager.getCriteria();
@@ -220,7 +231,16 @@ saveButton.addEventListener('click', () => {
   });
 });
 
-apiKeyInput.addEventListener('input', () => criteriaManager.checkForChanges());
+apiKeyInput.addEventListener('input', (e) => {
+  const value = e.target.value;
+  e.target.dataset.fullKey = value;
+  
+  if (toggleApiVisibility.innerHTML.includes('fa-eye')) {
+    e.target.value = maskApiKey(value);
+  }
+  
+  criteriaManager.checkForChanges();
+});
 hideLowRankTweetsSelect.addEventListener('change', () => criteriaManager.checkForChanges());
 colorfulRanksCheckbox.addEventListener('change', () => criteriaManager.checkForChanges());
 
@@ -228,7 +248,9 @@ chrome.storage.sync.get(
   ['apiKey', 'hideLowRankTweets', 'colorfulRanks', 'isPaused'],
   (data) => {
     if (data.apiKey) {
-      apiKeyInput.value = data.apiKey;
+      apiKeyInput.dataset.fullKey = data.apiKey;
+      apiKeyInput.value = maskApiKey(data.apiKey);
+      toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
     }
     if (data.hideLowRankTweets !== undefined) {
       hideLowRankTweetsSelect.value = data.hideLowRankTweets;
@@ -269,4 +291,19 @@ pauseResumeButton.addEventListener('click', () => {
       chrome.runtime.sendMessage({ action: 'togglePause', isPaused: newPausedState });
     });
   });
+});
+
+toggleApiVisibility.addEventListener('click', () => {
+  const fullKey = apiKeyInput.dataset.fullKey || '';
+  const isShowingFullKey = apiKeyInput.value === fullKey;
+  
+  if (isShowingFullKey) {
+    // Switch to masked
+    apiKeyInput.value = maskApiKey(fullKey);
+    toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
+  } else {
+    // Switch to full key
+    apiKeyInput.value = fullKey;
+    toggleApiVisibility.innerHTML = '<i class="fas fa-eye-slash"></i>';
+  }
 });

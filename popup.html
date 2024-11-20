@@ -15,16 +15,24 @@
     
     <div class="section">
       <div class="api-key-container">
-        <h2>API Key</h2>
-        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="api-key-link">
+        <h2>Model Settings</h2>
+        <select id="modelSelect" class="model-select">
+          <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash (Free)</option>
+          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+          <option value="gpt-4">GPT-4</option>
+        </select>
+        <a href="#" id="apiKeyLink" target="_blank" class="api-key-link">
           <i class="fas fa-external-link-alt"></i>
-          Get your API key
+          <span id="apiKeyLinkText">Get your API key</span>
         </a>
+      </div>
+      <div class="api-key-description">
+        <span id="apiKeyDescription"></span>
       </div>
       <div class="api-key-input-container">
         <input type="text" 
                id="apiKey" 
-               placeholder="Paste your Google AI Studio API key" 
+               placeholder="Paste your API key" 
                autocomplete="off" 
                spellcheck="false" />
         <button class="toggle-api-visibility" title="Toggle visibility">

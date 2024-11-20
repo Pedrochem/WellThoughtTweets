@@ -556,3 +556,34 @@ button:hover:enabled {
 #criteria-list {
   width: 100%;
 }
+
+.model-select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  border: 1px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.model-select:focus {
+  border-color: #1DA1F2;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(29, 161, 242, 0.1);
+}
+
+.api-key-description {
+  margin: 8px 0 12px 0;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-left: 3px solid #1DA1F2;
+  border-radius: 0 4px 4px 0;
+}
+
+.api-key-description span {
+  color: #657786;
+  font-size: 12px;
+  line-height: 1.4;
+}

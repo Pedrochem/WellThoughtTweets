@@ -4,6 +4,32 @@ const hideLowRankTweetsSelect = document.getElementById('hideLowRankTweets');
 const colorfulRanksCheckbox = document.getElementById('colorfulRanks');
 const pauseResumeButton = document.getElementById('pauseResume');
 const toggleApiVisibility = document.querySelector('.toggle-api-visibility');
+const MODEL_CONFIGS = {
+  'gemini-1.5-flash-latest': {
+    name: 'Gemini 1.5 Flash (Free)',
+    placeholder: 'Paste your Google AI Studio API key',
+    apiKeyLink: 'https://aistudio.google.com/app/apikey',
+    linkText: 'Get your Google AI Studio key',
+    description: 'Please ensure you are using a Google AI Studio API key for the Gemini model.'
+  },
+  'gpt-3.5-turbo': {
+    name: 'GPT-3.5 Turbo',
+    placeholder: 'Paste your OpenAI API key',
+    apiKeyLink: 'https://platform.openai.com/api-keys',
+    linkText: 'Get your OpenAI API key',
+    description: 'Please ensure you are using an OpenAI API key for GPT models.'
+  },
+  'gpt-4': {
+    name: 'GPT-4',
+    placeholder: 'Paste your OpenAI API key',
+    apiKeyLink: 'https://platform.openai.com/api-keys',
+    linkText: 'Get your OpenAI API key',
+    description: 'Please ensure you are using an OpenAI API key for GPT models.'
+  }
+};
+const modelSelect = document.getElementById('modelSelect');
+const apiKeyLink = document.getElementById('apiKeyLink');
+const apiKeyLinkText = document.getElementById('apiKeyLinkText');
 
 class CriteriaManager {
   constructor() {
@@ -19,9 +45,19 @@ class CriteriaManager {
   // New method to handle initial state loading
   initializeState() {
     chrome.storage.sync.get(
-      ['apiKey', 'hideLowRankTweets', 'colorfulRanks', 'isPaused', 'rankingCriteria'],
+      ['apiKey', 'selectedModel', 'hideLowRankTweets', 'colorfulRanks', 'isPaused', 'rankingCriteria'],
       (data) => {
-        // Set all initial values
+        // Set default model to Gemini if no model is selected
+        const selectedModel = data.selectedModel || 'gemini-1.5-flash-latest';
+        modelSelect.value = selectedModel;
+        
+        // Get config for selected model (will be Gemini by default)
+        const config = MODEL_CONFIGS[selectedModel];
+        apiKeyInput.placeholder = config.placeholder;
+        apiKeyLink.href = config.apiKeyLink;
+        apiKeyLinkText.textContent = config.linkText;
+        document.getElementById('apiKeyDescription').textContent = config.description;
+
         if (data.apiKey) {
           apiKeyInput.dataset.fullKey = data.apiKey;
           apiKeyInput.value = maskApiKey(data.apiKey);
@@ -60,6 +96,7 @@ class CriteriaManager {
   getCurrentState() {
     return {
       apiKey: apiKeyInput.value,
+      selectedModel: modelSelect.value,
       hideLowRankTweets: hideLowRankTweetsSelect.value,
       colorfulRanks: colorfulRanksCheckbox.checked,
       criteria: this.getCriteria()
@@ -72,6 +109,7 @@ class CriteriaManager {
     const currentState = this.getCurrentState();
 
     if (currentState.apiKey !== this.originalState.apiKey ||
+        currentState.selectedModel !== this.originalState.selectedModel ||
         currentState.hideLowRankTweets !== this.originalState.hideLowRankTweets ||
         currentState.colorfulRanks !== this.originalState.colorfulRanks) {
       return true;
@@ -262,12 +300,14 @@ toggleApiVisibility.addEventListener('click', () => {
 // Update save button handler
 saveButton.addEventListener('click', () => {
   const fullKey = apiKeyInput.dataset.fullKey || apiKeyInput.value;
+  const selectedModel = modelSelect.value;
   const hideLowRankTweets = hideLowRankTweetsSelect.value;
   const colorfulRanks = colorfulRanksCheckbox.checked;
   const criteria = criteriaManager.getCriteria();
 
   chrome.storage.sync.set({
     apiKey: fullKey,
+    selectedModel,
     hideLowRankTweets,
     colorfulRanks,
     rankingCriteria: criteria
@@ -275,14 +315,13 @@ saveButton.addEventListener('click', () => {
     chrome.runtime.sendMessage({ 
       action: 'updateApiKey', 
       apiKey: fullKey,
+      selectedModel,
       criteria: criteria
     }, () => {
       criteriaManager.originalState = criteriaManager.getCurrentState();
       criteriaManager.checkForChanges();
       
-      // Send message to content script to clear localStorage
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'clearRankings' });
         chrome.tabs.reload(tabs[0].id);
         window.close();
       });
@@ -307,4 +346,16 @@ pauseResumeButton.addEventListener('click', () => {
       chrome.runtime.sendMessage({ action: 'togglePause', isPaused: newPausedState });
     });
   });
+});
+
+modelSelect.addEventListener('change', () => {
+  const selectedModel = modelSelect.value;
+  const config = MODEL_CONFIGS[selectedModel];
+  
+  apiKeyInput.placeholder = config.placeholder;
+  apiKeyLink.href = config.apiKeyLink;
+  apiKeyLinkText.textContent = config.linkText;
+  document.getElementById('apiKeyDescription').textContent = config.description;
+  
+  criteriaManager.checkForChanges();
 });

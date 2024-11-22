@@ -111,7 +111,7 @@ async function rankTweetsWithOpenAI(tweets) {
     temperature: 0
   };
 
-  console.log(`OpenAI API Request #${apiCallCount}:`, JSON.stringify(requestBody, null, 2));
+  // console.log(`OpenAI API Request #${apiCallCount}:`, JSON.stringify(requestBody, null, 2));
 
   try {
     const response = await fetch(OPENAI_API_URL, {
@@ -124,7 +124,7 @@ async function rankTweetsWithOpenAI(tweets) {
     });
 
     if (response.status === 429) {
-      console.warn('OpenAI API rate limit reached. Retrying in 5 seconds.');
+      // console.warn('OpenAI API rate limit reached. Retrying in 5 seconds.');
       unrankedTweets.push(...tweets);
       scheduleRetry();
       return tweets.map(tweet => ({ id: tweet.id, rating: null }));
@@ -138,7 +138,7 @@ async function rankTweetsWithOpenAI(tweets) {
     }
 
     const data = await response.json();
-    console.log(`OpenAI API Response #${apiCallCount}:`, JSON.stringify(data, null, 2));
+    // console.log(`OpenAI API Response #${apiCallCount}:`, JSON.stringify(data, null, 2));
 
     if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
       console.error(`OpenAI API call #${apiCallCount} returned unexpected data structure:`);
@@ -151,9 +151,9 @@ async function rankTweetsWithOpenAI(tweets) {
       return isNaN(rating) ? -100 : rating;
     });
 
-    tweets.forEach((tweet, index) => {
-      console.log(`Tweet ID: ${tweet.id}, Rating: ${ratings[index]}`);
-    });
+    // tweets.forEach((tweet, index) => {
+    //   console.log(`Tweet ID: ${tweet.id}, Rating: ${ratings[index]}`);
+    // });
 
     return tweets.map((tweet, index) => ({ 
       id: tweet.id.toString(), 

@@ -28,7 +28,7 @@ async function rankTweetsWithGemini(tweets) {
   }
 
   apiCallCount++;
-  console.log(`Making Gemini API call #${apiCallCount} | Tweets to rank: ${tweets.length}`);
+  console.log(`Processing ${tweets.length} tweets with Gemini`);
 
   const activeCriteria = currentCriteria.filter(c => c.weight > 0);
   const criteriaText = activeCriteria.length > 0 
@@ -50,8 +50,6 @@ async function rankTweetsWithGemini(tweets) {
       body: JSON.stringify(requestBody)
     });
 
-    console.log('API Request:', JSON.stringify(requestBody, null, 2));
-
     if (response.status === 429) {
       console.warn('API quota reached. Retrying in 5 seconds.');
       unrankedTweets.push(...tweets);
@@ -60,34 +58,26 @@ async function rankTweetsWithGemini(tweets) {
     }
 
     if (!response.ok) {
-      console.error(`API call #${apiCallCount} failed with status: ${response.status}`);
-      const errorText = await response.text();
-      console.error('Error response:', errorText);
+      console.error(`API call failed with status: ${response.status}`);
       return tweets.map(tweet => ({ id: tweet.id, rating: -10 }));
     }
 
     const data = await response.json();
 
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
-      console.error(`API call #${apiCallCount} returned unexpected data structure:`);
-      console.error('Received structure:', JSON.stringify(data, null, 2));
+    if (!data.candidates?.[0]?.content?.parts) {
+      console.error('Unexpected API response structure');
       return tweets.map(tweet => ({ id: tweet.id, rating: -1 }));
     }
 
-    const ratingText = data.candidates[0].content.parts[0].text;
-    const ratings = ratingText.split(',').map(r => {
+    const ratings = data.candidates[0].content.parts[0].text.split(',').map(r => {
       const rating = parseInt(r.trim());
       return isNaN(rating) ? -100 : rating;
     });
 
-    tweets.forEach((tweet, index) => {
-      console.log(`Tweet ID: ${tweet.id}, Rating: ${ratings[index]}`);
-    });
     return tweets.map((tweet, index) => ({ id: tweet.id.toString(), rating: ratings[index] }));
 
   } catch (error) {
-    console.error(`Error in API call #${apiCallCount}:`, error);
-    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    console.error('Error processing tweets:', error.message);
     return tweets.map(tweet => ({ id: tweet.id, rating: -4 }));
   }
 }
@@ -99,7 +89,7 @@ async function rankTweetsWithOpenAI(tweets) {
   }
 
   apiCallCount++;
-  console.log(`Making OpenAI API call #${apiCallCount} | Tweets to rank: ${tweets.length}`);
+  console.log(`Processing ${tweets.length} tweets with OpenAI`);
 
   const activeCriteria = currentCriteria.filter(c => c.weight > 0);
   const criteriaText = activeCriteria.length > 0 
@@ -180,14 +170,13 @@ async function rankTweetsWithOpenAI(tweets) {
 // Update message listener to handle model selection
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'updateApiKey') {
-    console.log(`Configuration updated`);
+    console.log('Configuration updated');
     API_KEY = request.apiKey;
     selectedModel = request.selectedModel;
     if (request.criteria) {
       currentCriteria = request.criteria;
     }
-    
-    sendResponse({ status: 'API key, model, and criteria updated' });
+    sendResponse({ status: 'Configuration updated' });
     return true;
   }
 

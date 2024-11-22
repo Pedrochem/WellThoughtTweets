@@ -2,32 +2,87 @@
 <html>
 <head>
   <title>Tweet Thought Ranker Settings</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" type="text/css" href="popup.css">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1>Settings</h1>
-    <label for="apiKey">Google AI Studio API Key: <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link">(Get your API key)</a></label>
-    <input type="text" id="apiKey" placeholder="Enter your API key" />
-    <label for="hideLowRankTweets">Hide tweets with rank equal to or below:</label>
-    <select id="hideLowRankTweets" style="visibility: hidden;">
-      <option value="0">Do not hide any tweets</option>
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4">4</option>
-      <option value="5">5</option>
-      <option value="6">6</option>
-      <option value="7">7</option>
-      <option value="8">8</option>
-      <option value="9">9</option>
-    </select>
-    <div class="colorful-ranks-container">
-      <input type="checkbox" id="colorfulRanks" checked />
-      <label for="colorfulRanks">Use colorful ranks</label>
+    <div class="title-container">
+      <h1>Settings</h1>
+      <img src="images/icon32.png" alt="Judge Icon" class="title-icon">
     </div>
+    
+    <div class="section">
+      <div class="api-key-container">
+        <h2>Model Settings</h2>
+        <select id="modelSelect" class="model-select">
+          <option value="gemini-1.5-flash-latest">gemini-1.5-flash (free)</option>
+          <option value="gpt-4o-mini">gpt-4o-mini</option>
+          <option value="gpt-4o">gpt-4o</option>
+        </select>
+        <a href="#" id="apiKeyLink" target="_blank" class="api-key-link">
+          <i class="fas fa-external-link-alt"></i>
+          <span id="apiKeyLinkText">Get your API key</span>
+        </a>
+      </div>
+      <div class="api-key-description">
+        <span id="apiKeyDescription"></span>
+      </div>
+      <div class="api-key-input-container">
+        <input type="text" 
+               id="apiKey" 
+               placeholder="Paste your API key" 
+               autocomplete="off" 
+               spellcheck="false" />
+        <button class="toggle-api-visibility" title="Toggle visibility">
+          <i class="fas fa-eye"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Ranking Criteria</h2>
+      <div class="criteria-help">
+        <span>Criteria are used to evaluate tweets. Higher weights mean more importance in the final ranking score.</span>
+      </div>
+      <div class="criteria-container">
+        <div id="criteria-list">
+          <!-- Criteria items will be added here dynamically -->
+        </div>
+        <button id="add-criteria" class="secondary-button">
+          <i class="fas fa-plus"></i> Add New Criterion
+        </button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Display Settings</h2>
+      <label for="hideLowRankTweets">Hide tweets with rank equal to or below:</label>
+      <select id="hideLowRankTweets">
+        <option value="0">Do not hide any tweets</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+      </select>
+      <div class="colorful-ranks-container">
+        <input type="checkbox" id="colorfulRanks" checked />
+        <label for="colorfulRanks">Use colorful ranks</label>
+      </div>
+    </div>
+
     <button id="save">Save</button>
     <button id="pauseResume">Pause Ranking</button>
+    
+    <a href="#" id="openFullSettings" class="full-settings-link">
+      <i class="fas fa-external-link-alt"></i> Open settings in full screen
+    </a>
   </div>
   <script src="popup.js"></script>
 </body>

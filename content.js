@@ -154,6 +154,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             } 
         });
     }
+    if (message.action === 'clearRankings') {
+        console.log('Clearing tweets!!!!');
+        let clearedCount = 0;
+        for (let key in localStorage) {
+            if (key.startsWith('tweet-ranking-')) {
+                localStorage.removeItem(key);
+                clearedCount++;
+            }
+        }
+        console.log('Cleared', clearedCount, 'items from localStorage');
+    }
 });
 
 // Run processTweets immediately and then every 5 seconds

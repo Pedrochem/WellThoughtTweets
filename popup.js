@@ -66,7 +66,7 @@ class CriteriaManager {
           toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
         }
         
-        hideLowRankTweetsSelect.value = data.hideLowRankTweets || '1';
+        hideLowRankTweetsSelect.value = data.hideLowRankTweets || '0';
         colorfulRanksCheckbox.checked = data.colorfulRanks !== undefined ? data.colorfulRanks : true;
         
         // Load criteria

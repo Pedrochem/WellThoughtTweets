@@ -50,10 +50,44 @@ async function rankTweetsWithGemini(tweets) {
       body: JSON.stringify(requestBody)
     });
 
-    // Handle response and return ratings
-    // ... rest of the Gemini handling code remains the same ...
+    console.log('API Request:', JSON.stringify(requestBody, null, 2));
+
+    if (response.status === 429) {
+      console.warn('API quota reached. Retrying in 5 seconds.');
+      unrankedTweets.push(...tweets);
+      scheduleRetry();
+      return tweets.map(tweet => ({ id: tweet.id, rating: null }));
+    }
+
+    if (!response.ok) {
+      console.error(`API call #${apiCallCount} failed with status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      return tweets.map(tweet => ({ id: tweet.id, rating: -10 }));
+    }
+
+    const data = await response.json();
+
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
+      console.error(`API call #${apiCallCount} returned unexpected data structure:`);
+      console.error('Received structure:', JSON.stringify(data, null, 2));
+      return tweets.map(tweet => ({ id: tweet.id, rating: -1 }));
+    }
+
+    const ratingText = data.candidates[0].content.parts[0].text;
+    const ratings = ratingText.split(',').map(r => {
+      const rating = parseInt(r.trim());
+      return isNaN(rating) ? -100 : rating;
+    });
+
+    tweets.forEach((tweet, index) => {
+      console.log(`Tweet ID: ${tweet.id}, Rating: ${ratings[index]}`);
+    });
+    return tweets.map((tweet, index) => ({ id: tweet.id.toString(), rating: ratings[index] }));
+
   } catch (error) {
-    console.error('Error in Gemini API call:', error);
+    console.error(`Error in API call #${apiCallCount}:`, error);
+    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return tweets.map(tweet => ({ id: tweet.id, rating: -4 }));
   }
 }
@@ -124,12 +158,13 @@ async function rankTweetsWithOpenAI(tweets) {
 // Update message listener to handle model selection
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'updateApiKey') {
-    console.log(`Configuration updated: API key, model, and criteria`);
+    console.log(`Configuration updated`);
     API_KEY = request.apiKey;
     selectedModel = request.selectedModel;
     if (request.criteria) {
       currentCriteria = request.criteria;
     }
+    
     sendResponse({ status: 'API key, model, and criteria updated' });
     return true;
   }

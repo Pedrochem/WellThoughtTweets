@@ -318,6 +318,11 @@ saveButton.addEventListener('click', () => {
       selectedModel,
       criteria: criteria
     }, () => {
+      // Send message to clear rankings
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'clearRankings' });
+      });
+
       criteriaManager.originalState = criteriaManager.getCurrentState();
       criteriaManager.checkForChanges();
       

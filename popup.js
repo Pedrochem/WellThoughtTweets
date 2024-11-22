@@ -6,21 +6,21 @@ const pauseResumeButton = document.getElementById('pauseResume');
 const toggleApiVisibility = document.querySelector('.toggle-api-visibility');
 const MODEL_CONFIGS = {
   'gemini-1.5-flash-latest': {
-    name: 'Gemini 1.5 Flash (Free)',
+    name: 'gemini-1.5-flash (free)',
     placeholder: 'Paste your Google AI Studio API key',
     apiKeyLink: 'https://aistudio.google.com/app/apikey',
     linkText: 'Get your Google AI Studio key',
     description: 'Please ensure you are using a Google AI Studio API key for the Gemini model.'
   },
-  'gpt-3.5-turbo': {
-    name: 'GPT-3.5 Turbo',
+  'gpt-4o-mini': {
+    name: 'gpt-4o-mini',
     placeholder: 'Paste your OpenAI API key',
     apiKeyLink: 'https://platform.openai.com/api-keys',
     linkText: 'Get your OpenAI API key',
     description: 'Please ensure you are using an OpenAI API key for GPT models.'
   },
-  'gpt-4o-mini': {
-    name: 'GPT-4o Mini',
+  'gpt-4o': {
+    name: 'gpt-4o',
     placeholder: 'Paste your OpenAI API key',
     apiKeyLink: 'https://platform.openai.com/api-keys',
     linkText: 'Get your OpenAI API key',

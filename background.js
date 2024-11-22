@@ -121,6 +121,8 @@ async function rankTweetsWithOpenAI(tweets) {
     temperature: 0
   };
 
+  console.log(`OpenAI API Request #${apiCallCount}:`, JSON.stringify(requestBody, null, 2));
+
   try {
     const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
@@ -131,17 +133,36 @@ async function rankTweetsWithOpenAI(tweets) {
       body: JSON.stringify(requestBody)
     });
 
+    if (response.status === 429) {
+      console.warn('OpenAI API rate limit reached. Retrying in 5 seconds.');
+      unrankedTweets.push(...tweets);
+      scheduleRetry();
+      return tweets.map(tweet => ({ id: tweet.id, rating: null }));
+    }
+
     if (!response.ok) {
-      console.error(`OpenAI API call failed with status: ${response.status}`);
+      console.error(`OpenAI API call #${apiCallCount} failed with status: ${response.status}`);
       const errorText = await response.text();
       console.error('Error response:', errorText);
       return tweets.map(tweet => ({ id: tweet.id, rating: -10 }));
     }
 
     const data = await response.json();
+    console.log(`OpenAI API Response #${apiCallCount}:`, JSON.stringify(data, null, 2));
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      console.error(`OpenAI API call #${apiCallCount} returned unexpected data structure:`);
+      console.error('Received structure:', JSON.stringify(data, null, 2));
+      return tweets.map(tweet => ({ id: tweet.id, rating: -1 }));
+    }
+
     const ratings = data.choices[0].message.content.split(',').map(r => {
       const rating = parseInt(r.trim());
       return isNaN(rating) ? -100 : rating;
+    });
+
+    tweets.forEach((tweet, index) => {
+      console.log(`Tweet ID: ${tweet.id}, Rating: ${ratings[index]}`);
     });
 
     return tweets.map((tweet, index) => ({ 
@@ -150,7 +171,8 @@ async function rankTweetsWithOpenAI(tweets) {
     }));
 
   } catch (error) {
-    console.error('Error in OpenAI API call:', error);
+    console.error(`Error in OpenAI API call #${apiCallCount}:`, error);
+    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return tweets.map(tweet => ({ id: tweet.id, rating: -4 }));
   }
 }

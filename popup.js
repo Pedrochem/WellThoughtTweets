@@ -47,12 +47,14 @@ class CriteriaManager {
     chrome.storage.sync.get(
       ['apiKey', 'selectedModel', 'hideLowRankTweets', 'colorfulRanks', 'isPaused', 'rankingCriteria'],
       (data) => {
-        // Set default model to Gemini if no model is selected
-        const selectedModel = data.selectedModel || 'gemini-1.5-flash-latest';
-        modelSelect.value = selectedModel;
+        if (data.selectedModel) {
+          modelSelect.value = data.selectedModel;
+        } else {
+          // Only set Gemini as default if no model is stored
+          modelSelect.value = 'gemini-1.5-flash-latest';
+        }
         
-        // Get config for selected model (will be Gemini by default)
-        const config = MODEL_CONFIGS[selectedModel];
+        const config = MODEL_CONFIGS[modelSelect.value];
         apiKeyInput.placeholder = config.placeholder;
         apiKeyLink.href = config.apiKeyLink;
         apiKeyLinkText.textContent = config.linkText;

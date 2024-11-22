@@ -364,3 +364,11 @@ modelSelect.addEventListener('change', () => {
   
   criteriaManager.checkForChanges();
 });
+
+document.getElementById('openFullSettings').addEventListener('click', (e) => {
+  e.preventDefault();
+  chrome.tabs.create({
+    url: chrome.runtime.getURL('popup.html')
+  });
+  window.close();
+});

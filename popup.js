@@ -45,12 +45,11 @@ class CriteriaManager {
   // New method to handle initial state loading
   initializeState() {
     chrome.storage.sync.get(
-      ['apiKey', 'selectedModel', 'hideLowRankTweets', 'colorfulRanks', 'isPaused', 'rankingCriteria'],
+      ['geminiApiKey', 'openaiApiKey', 'selectedModel', 'hideLowRankTweets', 'colorfulRanks', 'isPaused', 'rankingCriteria'],
       (data) => {
         if (data.selectedModel) {
           modelSelect.value = data.selectedModel;
         } else {
-          // Only set Gemini as default if no model is stored
           modelSelect.value = 'gemini-1.5-flash-latest';
         }
         
@@ -60,10 +59,19 @@ class CriteriaManager {
         apiKeyLinkText.textContent = config.linkText;
         document.getElementById('apiKeyDescription').textContent = config.description;
 
-        if (data.apiKey) {
-          apiKeyInput.dataset.fullKey = data.apiKey;
-          apiKeyInput.value = maskApiKey(data.apiKey);
-          toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
+        // Load the appropriate API key based on the selected model
+        if (modelSelect.value.includes('gemini')) {
+          if (data.geminiApiKey) {
+            apiKeyInput.dataset.fullKey = data.geminiApiKey;
+            apiKeyInput.value = maskApiKey(data.geminiApiKey);
+            toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
+          }
+        } else {
+          if (data.openaiApiKey) {
+            apiKeyInput.dataset.fullKey = data.openaiApiKey;
+            apiKeyInput.value = maskApiKey(data.openaiApiKey);
+            toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
+          }
         }
         
         hideLowRankTweetsSelect.value = data.hideLowRankTweets || '0';
@@ -307,20 +315,28 @@ saveButton.addEventListener('click', () => {
   const colorfulRanks = colorfulRanksCheckbox.checked;
   const criteria = criteriaManager.getCriteria();
 
-  chrome.storage.sync.set({
-    apiKey: fullKey,
+  // Store API keys separately based on the model
+  const storageData = {
     selectedModel,
     hideLowRankTweets,
     colorfulRanks,
     rankingCriteria: criteria
-  }, () => {
+  };
+
+  if (selectedModel.includes('gemini')) {
+    storageData.geminiApiKey = fullKey;
+  } else {
+    storageData.openaiApiKey = fullKey;
+  }
+
+  chrome.storage.sync.set(storageData, () => {
     chrome.runtime.sendMessage({ 
       action: 'updateApiKey', 
       apiKey: fullKey,
       selectedModel,
       criteria: criteria
     }, () => {
-      // Send message to clear rankings
+      // Clear rankings when model changes
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         chrome.tabs.sendMessage(tabs[0].id, { action: 'clearRankings' });
       });
@@ -355,6 +371,7 @@ pauseResumeButton.addEventListener('click', () => {
   });
 });
 
+// Update model select handler
 modelSelect.addEventListener('change', () => {
   const selectedModel = modelSelect.value;
   const config = MODEL_CONFIGS[selectedModel];
@@ -363,6 +380,22 @@ modelSelect.addEventListener('change', () => {
   apiKeyLink.href = config.apiKeyLink;
   apiKeyLinkText.textContent = config.linkText;
   document.getElementById('apiKeyDescription').textContent = config.description;
+
+  // Load the appropriate stored API key when switching models
+  chrome.storage.sync.get(['geminiApiKey', 'openaiApiKey'], (data) => {
+    if (selectedModel.includes('gemini') && data.geminiApiKey) {
+      apiKeyInput.dataset.fullKey = data.geminiApiKey;
+      apiKeyInput.value = maskApiKey(data.geminiApiKey);
+    } else if (!selectedModel.includes('gemini') && data.openaiApiKey) {
+      apiKeyInput.dataset.fullKey = data.openaiApiKey;
+      apiKeyInput.value = maskApiKey(data.openaiApiKey);
+    } else {
+      apiKeyInput.dataset.fullKey = '';
+      apiKeyInput.value = '';
+    }
+    toggleApiVisibility.innerHTML = '<i class="fas fa-eye"></i>';
+
+  });
   
   criteriaManager.checkForChanges();
 });

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tweet Thought Ranker",
-  "version": "2.0",
+  "version": "2.1",
   "description": "Ranks tweets based on how well thought they are using Gemini-1.5-flash.",
   "permissions": ["activeTab", "storage"],
   "host_permissions": ["https://generativelanguage.googleapis.com/*"],
